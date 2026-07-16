@@ -38,11 +38,6 @@ def build() -> str:
     inv_text = t["inverse_text"]
     inv_bg = t["inverse_bg"]
 
-    # Shared focus: always 2px so padding stays stable
-    focus_btn = f"border: 2px solid {ink};"
-    # Control rest border 1px; focus 2px with 1px less padding to avoid jump
-    # Better: always 2px, rest color = border_strong or transparent
-
     return f"""
 /* ========== Base ========== */
 QWidget {{
@@ -72,10 +67,11 @@ QLabel#akTitle {{
     font-size: {fs["3xl"]}px;
     font-weight: 700;
     letter-spacing: {ty.tracking_tight};
+    line-height: {ty.lh_tight};
     color: {ink};
 }}
 QLabel#akSectionTitle {{
-    font-size: {fs["2xl"]}px;
+    font-size: {fs["xl"]}px;
     font-weight: 500;
     letter-spacing: {ty.tracking_tight};
     color: {ink};
@@ -116,6 +112,7 @@ QLabel#akMuted {{
 QLabel#akLead {{
     color: {text_sec};
     font-size: {fs["lg"]}px;
+    max-width: 560px;
 }}
 QLabel#akPanelTitle {{
     font-size: {fs["sm"]}px;
@@ -778,7 +775,7 @@ QTableCornerButton::section {{
     border: none;
 }}
 
-/* ========== Empty ========== */
+/* ========== Empty (start-aligned by default) ========== */
 AkEmptyState, QFrame#AkEmptyState {{
     background-color: {surface};
     border: {bw}px dashed {border_s};

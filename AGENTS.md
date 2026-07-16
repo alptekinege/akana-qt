@@ -19,8 +19,11 @@ Concretely:
    when QSS cannot express the control (toggle/checkbox/radio).
 4. Use `akana.util.set_dyn` / `repolish` for dynamic properties.
 5. Prefer fixed **2px** borders for focusable controls so focus never jumps layout.
-6. Demo on the right `demo/app.py` page; wire `AkLinkCard` if it is a gallery entry.
-7. Update `DESIGN.md` + `CHANGELOG.md` (SemVer).
+6. **Do not center whole pages.** Gallery/content columns are left-weighted:
+   `max-width` + slack on the right. Pack action rows start→end. Empty states
+   default `align="start"`; center only when the pattern truly needs it (modals).
+7. Demo on the matching `demo/app.py` page; wire `AkLinkCard` if it is a gallery entry.
+8. Update `DESIGN.md` + `CHANGELOG.md` (SemVer).
 
 ## Hard constraints
 

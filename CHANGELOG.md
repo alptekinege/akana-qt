@@ -4,6 +4,16 @@ All notable changes to **Akana Qt** are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning follows
 [SemVer](https://semver.org/). Aligned with web Akana tags where practical.
 
+## [0.5.2] - 2026-07-16
+
+### Changed
+- **Layout philosophy:** gallery content is left-weighted (max-width column,
+  free space on the **right**). Removed dual-stretch horizontal centering.
+- **Empty states** default to `align="start"`; optional `center` only when needed.
+- Style boards / panels pack **top-left** (no tall empty vertical stretch).
+- Nav strip sizes to content and sits on the start edge.
+- Lead measure ~560px; section titles use `xl` scale for denser hierarchy.
+
 ## [0.5.1] - 2026-07-16
 
 ### Added

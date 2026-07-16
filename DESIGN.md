@@ -1,5 +1,5 @@
 ---
-version: 0.5.1
+version: 0.5.2
 name: Akana Qt
 description: Monochrome, text-first design system for PyQt6 (Ak + Ana). Ink-on-paper, no accent color, bundled IBM Plex TTF (SIL OFL 1.1). Port of web Akana.
 colors:

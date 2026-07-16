@@ -83,7 +83,10 @@ class AkNavRail(QFrame):
 
 
 class AkNavStrip(QFrame):
-    """Horizontal segmented nav (web `.ak-nav` surface shell)."""
+    """Horizontal segmented nav (web `.ak-nav` surface shell).
+
+    Packs to content width on the left — does not stretch to full page width.
+    """
 
     currentChanged = pyqtSignal(int)
 
@@ -91,11 +94,13 @@ class AkNavStrip(QFrame):
         super().__init__(parent)
         self.setObjectName("AkNavStrip")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self._items: list[AkNavItem] = []
 
         self._row = QHBoxLayout(self)
         self._row.setContentsMargins(SPACE[1], SPACE[1], SPACE[1], SPACE[1])
         self._row.setSpacing(SPACE[1])
+        self._row.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
     def add_item(self, text: str) -> AkNavItem:
         item = AkNavItem(text, self)

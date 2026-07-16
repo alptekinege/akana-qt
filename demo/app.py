@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QScrollArea,
     QSizeGrip,
+    QSizePolicy,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -101,6 +102,12 @@ def _pattern_title(text: str) -> QLabel:
 
 
 class Page(QWidget):
+    """Gallery page: left-weighted column, max measure, free space on the right.
+
+    Not a centered marketing column — content starts under the sidebar edge
+    and stops at MAX_W. Titles/leads stay start-aligned.
+    """
+
     def __init__(
         self,
         eyebrow: str,
@@ -112,48 +119,62 @@ class Page(QWidget):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
+        outer.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+
+        # Horizontal: content left · slack right (never dual-stretch center)
+        row = QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(0)
+        row.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
         inner = QFrame()
         inner.setObjectName("akContentInner")
+        inner.setMaximumWidth(MAX_W)
+        inner.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+
         root = QVBoxLayout(inner)
-        root.setContentsMargins(SPACE[8], SPACE[6], SPACE[8], SPACE[10])
+        # Asymmetric: comfortable left pad, slightly larger right pad only if needed
+        root.setContentsMargins(SPACE[8], SPACE[6], SPACE[8], SPACE[12])
         root.setSpacing(SPACE[8])
-        root.setAlignment(Qt.AlignmentFlag.AlignTop)
+        root.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
         hero = QFrame()
         hero.setObjectName("akPageHero")
         hv = QVBoxLayout(hero)
         hv.setContentsMargins(0, 0, 0, SPACE[5])
         hv.setSpacing(SPACE[2])
+        hv.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         eye = QLabel(eyebrow)
         eye.setObjectName("akLabel")
-        hv.addWidget(eye)
+        hv.addWidget(eye, 0, Qt.AlignmentFlag.AlignLeft)
         t = QLabel(title)
         t.setObjectName("akTitle")
         t.setWordWrap(True)
-        hv.addWidget(t)
+        t.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        hv.addWidget(t, 0, Qt.AlignmentFlag.AlignLeft)
         if lead:
             l = QLabel(lead)
             l.setObjectName("akLead")
             l.setWordWrap(True)
-            hv.addWidget(l)
-        root.addWidget(hero)
+            l.setMaximumWidth(560)
+            l.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+            hv.addWidget(l, 0, Qt.AlignmentFlag.AlignLeft)
+        root.addWidget(hero, 0, Qt.AlignmentFlag.AlignLeft)
 
         self._body = QVBoxLayout()
         self._body.setSpacing(SPACE[8])
+        self._body.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         root.addLayout(self._body)
         root.addStretch(1)
 
-        row = QHBoxLayout()
-        row.setContentsMargins(0, 0, 0, 0)
-        row.addStretch(1)
-        row.addWidget(inner, 1)
-        row.addStretch(1)
-        outer.addLayout(row)
-        inner.setMaximumWidth(MAX_W + SPACE[8] * 2)
+        # Stretch 1 + AlignLeft: fills up to max-width, excess stays on the right
+        row.addWidget(
+            inner, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        )
+        outer.addLayout(row, 1)
 
     def add(self, widget: QWidget) -> None:
-        self._body.addWidget(widget)
+        self._body.addWidget(widget, 0, Qt.AlignmentFlag.AlignLeft)
 
 
 class MainWindow(QMainWindow):
@@ -528,14 +549,18 @@ class MainWindow(QMainWindow):
         )
         self._swatch_host = QWidget()
         self._swatch_grid = QGridLayout(self._swatch_host)
+        self._swatch_grid.setContentsMargins(0, 0, 0, 0)
         self._swatch_grid.setHorizontalSpacing(SPACE[3])
         self._swatch_grid.setVerticalSpacing(SPACE[3])
+        self._swatch_grid.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        )
         self._swatch_frames: list[tuple[QFrame, str]] = []
         self._build_semantic_swatches()
         sec.add_widget(self._swatch_host)
         page.add(sec)
 
-        # Primitive ramp (fixed)
+        # Primitive ramp (fixed) — left-packed, labels under chips start-aligned
         prim = AkShowcaseSection(
             "Primitive",
             "Gray ramp",
@@ -543,6 +568,7 @@ class MainWindow(QMainWindow):
         )
         ramp = QHBoxLayout()
         ramp.setSpacing(SPACE[2])
+        ramp.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         for key in (
             "gray-0", "gray-50", "gray-100", "gray-200", "gray-300",
             "gray-400", "gray-500", "gray-600", "gray-700", "gray-800",
@@ -550,6 +576,7 @@ class MainWindow(QMainWindow):
         ):
             cell = QVBoxLayout()
             cell.setSpacing(SPACE[1])
+            cell.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
             sw = QFrame()
             sw.setObjectName("akSwatch")
             sw.setFixedSize(48, 48)
@@ -557,14 +584,14 @@ class MainWindow(QMainWindow):
                 f"QFrame#akSwatch {{ background-color: {GRAY_PRIMITIVES[key]}; "
                 f"border: 1px solid {get_theme()['border']}; border-radius: 8px; }}"
             )
-            cell.addWidget(sw)
+            cell.addWidget(sw, 0, Qt.AlignmentFlag.AlignLeft)
             n = QLabel(key.replace("gray-", ""))
             n.setObjectName("akSwatchName")
-            n.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            cell.addWidget(n)
+            n.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            cell.addWidget(n, 0, Qt.AlignmentFlag.AlignLeft)
             w = QWidget()
             w.setLayout(cell)
-            ramp.addWidget(w)
+            ramp.addWidget(w, 0, Qt.AlignmentFlag.AlignLeft)
         ramp.addStretch(1)
         ramp_w = QWidget()
         ramp_w.setLayout(ramp)
@@ -635,11 +662,11 @@ class MainWindow(QMainWindow):
         for i, key in enumerate(keys):
             cell = QVBoxLayout()
             cell.setSpacing(SPACE[1])
+            cell.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
             sw = QFrame()
             sw.setObjectName("akSwatch")
             sw.setMinimumHeight(56)
             hex_v = t[key]
-            # Contrast label color: use ink if light swatch
             sw.setStyleSheet(
                 f"QFrame#akSwatch {{ background-color: {hex_v}; "
                 f"border: 1px solid {t['border']}; border-radius: 8px; }}"
@@ -647,13 +674,17 @@ class MainWindow(QMainWindow):
             cell.addWidget(sw)
             n = QLabel(key)
             n.setObjectName("akSwatchName")
+            n.setAlignment(Qt.AlignmentFlag.AlignLeft)
             cell.addWidget(n)
             h = QLabel(hex_v)
             h.setObjectName("akSwatchHex")
+            h.setAlignment(Qt.AlignmentFlag.AlignLeft)
             cell.addWidget(h)
             wrap = QWidget()
             wrap.setLayout(cell)
-            self._swatch_grid.addWidget(wrap, i // 4, i % 4)
+            self._swatch_grid.addWidget(
+                wrap, i // 4, i % 4, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            )
             self._swatch_frames.append((sw, key))
 
     def _refresh_swatches(self) -> None:
@@ -998,15 +1029,13 @@ class MainWindow(QMainWindow):
             "Nothing here yet",
             "Start with a pattern above, or open the modal for a confirm flow.",
         )
-        es.add_action(AkButton("Get started", size="sm"))
-        es.add_action(AkButton("Open modal…", variant="secondary", size="sm"))
-        # wire second action
-        # find last button — cleaner to keep refs
+        start_btn = AkButton("Get started", size="sm")
+        modal_btn = AkButton("Open modal…", variant="secondary", size="sm")
+        modal_btn.clicked.connect(self._open_modal)
+        es.add_action(start_btn)
+        es.add_action(modal_btn)
         empty_p.add_widget(es)
         page.add(empty_p)
-
-        # Wire empty modal button: rebuild empty with handlers
-        # (actions already added; connect first via children)
         return page
 
     def _open_modal(self) -> None:
@@ -1028,7 +1057,8 @@ def _badge_cell(text: str, *, solid: bool = False) -> QWidget:
     wrap = QWidget()
     lay = QHBoxLayout(wrap)
     lay.setContentsMargins(SPACE[4], SPACE[2], SPACE[4], SPACE[2])
-    lay.addWidget(AkBadge(text, variant="solid" if solid else "default"))
+    lay.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+    lay.addWidget(AkBadge(text, variant="solid" if solid else "default"), 0)
     lay.addStretch(1)
     return wrap
 
