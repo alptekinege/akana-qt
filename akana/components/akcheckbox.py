@@ -11,11 +11,12 @@ from PyQt6.QtWidgets import QCheckBox, QStyle, QStyleOptionButton, QWidget
 
 from akana.icons import glyph
 from akana.theme import get_theme
+from akana.tokens import CHECK_BOX, FS
 from akana.util import hand_cursor
 
 
 class AkCheckbox(QCheckBox):
-    BOX = 18
+    BOX = CHECK_BOX
 
     def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
@@ -53,7 +54,7 @@ class AkCheckbox(QCheckBox):
         if checked:
             p.setPen(QColor(t["inverse_text"] if enabled else t["text_muted"]))
             font = QFont(self.font())
-            font.setPixelSize(12)
+            font.setPixelSize(FS["sm"])
             font.setBold(True)
             p.setFont(font)
             p.drawText(box, int(Qt.AlignmentFlag.AlignCenter), glyph("check"))
@@ -64,7 +65,7 @@ class AkCheckbox(QCheckBox):
             p.drawRoundedRect(box.adjusted(-2, -2, 2, 2), 5, 5)
 
         # Label
-        text_x = self.BOX + 12
+        text_x = self.BOX + 14
         text_rect = self.rect().adjusted(text_x, 0, 0, 0)
         color = QColor(t["text"] if enabled else t["text_muted"])
         p.setPen(color)
@@ -78,10 +79,9 @@ class AkCheckbox(QCheckBox):
 
     def sizeHint(self):  # noqa: N802
         sh = super().sizeHint()
-        # Ensure width accounts for custom box + spacing
         fm = self.fontMetrics()
-        w = self.BOX + 12 + fm.horizontalAdvance(self.text()) + 4
-        h = max(self.BOX + 4, fm.height() + 4)
+        w = self.BOX + 14 + fm.horizontalAdvance(self.text()) + 8
+        h = max(self.BOX + 8, fm.height() + 8)
         sh.setWidth(w)
         sh.setHeight(h)
         return sh

@@ -23,6 +23,11 @@ def build() -> str:
     s = tokens.SPACE
     bw = tokens.BORDER_W
     ch = tokens.CONTROL_H
+    btn_h = tokens.BUTTON_H
+    btn_sm = tokens.BUTTON_H_SM
+    btn_lg = tokens.BUTTON_H_LG
+    page_btn = tokens.PAGE_BTN
+    nav_h = tokens.NAV_ITEM_H
 
     ink = t["ink"]
     ink_hover = t["ink_hover"]
@@ -296,17 +301,19 @@ AkLinkCard[hovered="true"] QLabel#akLinkGo {{
 
 /* ========== Button ==========
    Always 2px border → focus never shifts layout.
+   Heights tuned for desktop hit targets (larger than web CSS padding alone).
 */
 AkButton {{
     background-color: {ink};
     color: {inv_text};
     border: 2px solid transparent;
     border-radius: {r.md}px;
-    padding: 9px 15px;
+    padding: 0 18px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
     font-weight: 500;
-    min-height: 20px;
+    min-height: {btn_h}px;
+    max-height: {btn_h}px;
 }}
 AkButton:hover {{ background-color: {ink_hover}; color: {inv_text}; }}
 AkButton:pressed {{ background-color: {ink_active}; color: {inv_text}; }}
@@ -367,8 +374,18 @@ AkButton[variant="inverse"]:disabled {{
 }}
 AkButton[variant="inverse"]:focus {{ border: 2px solid {inv_text}; }}
 
-AkButton[akSize="sm"] {{ padding: 6px 11px; font-size: {fs["xs"]}px; }}
-AkButton[akSize="lg"] {{ padding: 12px 21px; font-size: {fs["md"]}px; }}
+AkButton[akSize="sm"] {{
+    padding: 0 14px;
+    font-size: {fs["xs"]}px;
+    min-height: {btn_sm}px;
+    max-height: {btn_sm}px;
+}}
+AkButton[akSize="lg"] {{
+    padding: 0 22px;
+    font-size: {fs["md"]}px;
+    min-height: {btn_lg}px;
+    max-height: {btn_lg}px;
+}}
 
 /* ========== Nav ========== */
 QPushButton#akNavItem {{
@@ -376,7 +393,8 @@ QPushButton#akNavItem {{
     color: {text_sec};
     border: 2px solid transparent;
     border-radius: {r.md}px;
-    padding: 9px 13px;
+    padding: 0 16px;
+    min-height: {nav_h}px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
     font-weight: 500;
@@ -404,7 +422,8 @@ QPushButton#akNavStripItem {{
     color: {text_sec};
     border: 2px solid transparent;
     border-radius: {r.md}px;
-    padding: 8px 13px;
+    padding: 0 16px;
+    min-height: 40px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
     font-weight: 500;
@@ -454,7 +473,11 @@ QLabel#akCardIcon {{
     border: {bw}px solid {border};
     border-radius: {r.md}px;
     color: {ink};
-    font-size: {fs["sm"]}px;
+    font-size: {fs["md"]}px;
+    min-width: {tokens.CARD_ICON}px;
+    max-width: {tokens.CARD_ICON}px;
+    min-height: {tokens.CARD_ICON}px;
+    max-height: {tokens.CARD_ICON}px;
 }}
 
 /* ========== Input / Textarea / Select ==========
@@ -490,7 +513,7 @@ AkTextarea, QPlainTextEdit, QTextEdit {{
     border: 2px solid {border_s};
     border-radius: {r.md}px;
     padding: 11px 13px;
-    min-height: 120px;
+    min-height: 140px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
     selection-background-color: {ink};
@@ -629,7 +652,8 @@ QPushButton#akTab {{
     border: none;
     border-bottom: 2px solid transparent;
     border-radius: 0;
-    padding: 10px 14px;
+    padding: 12px 16px;
+    min-height: 44px;
     margin-bottom: -1px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
@@ -709,8 +733,8 @@ QPushButton#akPageBtn {{
     color: {text_sec};
     border: 2px solid transparent;
     border-radius: {r.md}px;
-    min-width: 36px;
-    min-height: 36px;
+    min-width: {page_btn}px;
+    min-height: {page_btn}px;
     padding: 0 {s[2]}px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
@@ -786,7 +810,7 @@ QLabel#akEmptyIcon {{
     border: {bw}px solid {border};
     border-radius: {r.md}px;
     color: {ink};
-    font-size: {fs["lg"]}px;
+    font-size: {fs["xl"]}px;
 }}
 QLabel#akEmptyTitle {{
     font-size: {fs["lg"]}px;

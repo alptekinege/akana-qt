@@ -7,7 +7,7 @@ from typing import Literal
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
-from akana.tokens import SPACE
+from akana.tokens import BADGE_H, SPACE
 from akana.util import set_dyn
 
 Variant = Literal["default", "solid"]
@@ -24,14 +24,14 @@ class AkBadge(QFrame):
         super().__init__(parent)
         self.setObjectName("AkBadge")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(26)
+        self.setFixedHeight(BADGE_H)
         self.setSizePolicy(
             self.sizePolicy().horizontalPolicy(),
             self.sizePolicy().verticalPolicy(),
         )
 
         root = QHBoxLayout(self)
-        root.setContentsMargins(9, 3, 9, 3)
+        root.setContentsMargins(11, 4, 11, 4)
         root.setSpacing(SPACE[1])
         root.setAlignment(Qt.AlignmentFlag.AlignCenter)
 

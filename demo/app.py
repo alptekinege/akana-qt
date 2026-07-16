@@ -209,7 +209,6 @@ class MainWindow(QMainWindow):
         self.theme_chip = AkButton(
             self._theme_chip_label(), variant="secondary", size="sm"
         )
-        self.theme_chip.setFixedHeight(28)
         self.theme_chip.clicked.connect(self._toggle_theme)
         self.titlebar.add_action(self.theme_chip)
         outer.addWidget(self.titlebar)
@@ -221,7 +220,7 @@ class MainWindow(QMainWindow):
         left = QFrame()
         left.setObjectName("akSidebar")
         left.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        left.setFixedWidth(248)
+        left.setFixedWidth(260)
         lv = QVBoxLayout(left)
         lv.setContentsMargins(SPACE[4], SPACE[5], SPACE[4], SPACE[4])
         lv.setSpacing(SPACE[4])
@@ -1068,7 +1067,7 @@ def main() -> int:
     app.setApplicationName("Akana Qt")
     app.setOrganizationName("Akana")
     if fonts.load_fonts():
-        app.setFont(QFont("IBM Plex Sans", 10))
+        app.setFont(QFont("IBM Plex Sans", 11))
     load_saved_theme()
     window = MainWindow()
     window.show()

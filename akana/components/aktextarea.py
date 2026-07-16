@@ -14,6 +14,6 @@ class AkTextarea(QPlainTextEdit):
         super().__init__(parent)
         self.setObjectName("AkTextarea")
         self.setPlaceholderText(placeholder)
-        self.setMinimumHeight(120)
+        self.setMinimumHeight(140)
         self.setTabChangesFocus(True)
         self.document().setDocumentMargin(0)

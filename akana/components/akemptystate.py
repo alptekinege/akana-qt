@@ -12,7 +12,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from akana.icons import glyph
-from akana.tokens import SPACE
+from akana.tokens import EMPTY_ICON, SPACE
 from akana.util import set_dyn
 
 Align = Literal["start", "center"]
@@ -39,7 +39,7 @@ class AkEmptyState(QFrame):
 
         self._icon = QLabel(icon if icon is not None else glyph("empty"))
         self._icon.setObjectName("akEmptyIcon")
-        self._icon.setFixedSize(48, 48)
+        self._icon.setFixedSize(EMPTY_ICON, EMPTY_ICON)
         self._icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._icon.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._root.addWidget(self._icon)

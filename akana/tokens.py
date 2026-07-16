@@ -99,12 +99,14 @@ SPACE = {
 }
 
 # Named type sizes (desktop px) — keys match web --fs-*
+# Desktop Qt reads slightly smaller than browser CSS at the same px;
+# UI control type steps up one notch vs web for comfort.
 FS = {
-    "2xs": 11,
-    "xs": 12,
-    "sm": 14,
-    "md": 16,
-    "lg": 18,
+    "2xs": 12,   # mono meta / badges (was 11)
+    "xs": 13,    # compact UI (was 12)
+    "sm": 15,    # controls / buttons (was 14)
+    "md": 16,    # body
+    "lg": 18,    # lead / card title
     "xl": 22,
     "2xl": 28,
     "3xl": 36,
@@ -113,4 +115,22 @@ FS = {
 
 BORDER_W = 1
 MAX_W = 1080
-CONTROL_H = 44  # web .ak-input / .ak-select height
+
+# ---- Control geometry (desktop hit targets; ≥ web where noted) ----
+CONTROL_H = 48          # input / select resting height (web 44)
+CONTROL_H_SM = 36       # compact controls
+BUTTON_H = 44           # primary/secondary default min height
+BUTTON_H_SM = 36
+BUTTON_H_LG = 52
+PAGE_BTN = 40           # pagination square (web 36)
+NAV_ITEM_H = 44
+TITLEBAR_H = 48
+CHECK_BOX = 20          # checkbox side (web 18)
+RADIO_BOX = 18          # radio outer (web 16)
+TOGGLE_W = 44
+TOGGLE_H = 24
+TOGGLE_THUMB = 18
+BADGE_H = 28
+EMPTY_ICON = 52
+CARD_ICON = 40
+MODAL_W = 480

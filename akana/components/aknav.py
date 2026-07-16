@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from akana.tokens import SPACE
+from akana.tokens import NAV_ITEM_H, SPACE
 from akana.util import hand_cursor
 
 
@@ -27,7 +27,7 @@ class AkNavItem(QPushButton):
         hand_cursor(self)
         self.setFlat(True)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setMinimumHeight(40)
+        self.setMinimumHeight(NAV_ITEM_H)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 

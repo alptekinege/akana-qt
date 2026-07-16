@@ -45,7 +45,7 @@ class AkTable(QFrame):
         self.table.setTabKeyNavigation(True)
         self.table.setWordWrap(False)
         self.table.verticalHeader().setVisible(False)
-        self.table.verticalHeader().setDefaultSectionSize(48)
+        self.table.verticalHeader().setDefaultSectionSize(52)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
@@ -82,14 +82,14 @@ class AkTable(QFrame):
                 self._set_cell(r, c, cell)
         self.table.resizeRowsToContents()
         for r in range(self.table.rowCount()):
-            self.table.setRowHeight(r, max(48, self.table.rowHeight(r)))
+            self.table.setRowHeight(r, max(52, self.table.rowHeight(r)))
 
     def add_row(self, cells: list[str]) -> None:
         r = self.table.rowCount()
         self.table.insertRow(r)
         for c, cell in enumerate(cells):
             self._set_cell(r, c, cell)
-        self.table.setRowHeight(r, 48)
+        self.table.setRowHeight(r, 52)
 
     def _set_cell(self, r: int, c: int, cell: str | QWidget) -> None:
         if isinstance(cell, QWidget):

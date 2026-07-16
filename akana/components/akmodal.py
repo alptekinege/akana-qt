@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
 
 from akana.components.akbutton import AkButton
 from akana.theme import get_theme
-from akana.tokens import SPACE
+from akana.tokens import MODAL_W, SPACE
 
 
 class AkModal(QDialog):
@@ -66,7 +66,7 @@ class AkModal(QDialog):
         card = QFrame()
         card.setObjectName("akModalCard")
         card.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        card.setFixedWidth(440)
+        card.setFixedWidth(MODAL_W)
         card.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
         self._card = card
 

@@ -50,11 +50,13 @@ Components use **semantic** keys only (`bg`, `ink`, `text`, …).
 
 ## Type (desktop px)
 
+Qt UI is nudged up one step vs browser CSS so controls stay legible.
+
 | Key | px | Role |
 |-----|----|------|
-| 2xs | 11 | Mono labels |
-| xs | 12 | Small UI |
-| sm | 14 | Controls |
+| 2xs | 12 | Mono labels / badges |
+| xs | 13 | Compact UI / sm buttons |
+| sm | 15 | Controls / buttons |
 | md | 16 | Body |
 | lg | 18 | Lead / card title |
 | xl | 22 | Modal title |
@@ -69,8 +71,11 @@ Tracking: tight `-0.02em`, label `0.06em`.
 
 - `SPACE`: 1→4, 2→8, … 20→80 (4px base)
 - Radius: sm 4 · md 8 · lg 12 · pill 999
-- `CONTROL_H` = 44 (input / select)
-- `MAX_W` = 1080 (gallery column)
+- `CONTROL_H` = 48 (input / select)
+- `BUTTON_H` / `_SM` / `_LG` = 44 / 36 / 52
+- `NAV_ITEM_H` = 44 · `PAGE_BTN` = 40 · `TITLEBAR_H` = 48
+- `TOGGLE_W×H` = 44×24 · `CHECK_BOX` = 20 · `RADIO_BOX` = 18 · `BADGE_H` = 28
+- `MAX_W` = 1080 (gallery column) · `MODAL_W` = 480
 - Motion: 120ms fast · 200ms base (reference only; QSS transitions limited)
 
 ## Contrast targets

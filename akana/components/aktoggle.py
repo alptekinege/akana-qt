@@ -1,7 +1,7 @@
 """Akana Qt — monochrome toggle / switch with painted track + thumb.
 
-Mirrors web `.ak-toggle`:
-  track surface-2 / checked ink, thumb muted → inverse-text, 40×22.
+Track surface-2 / checked ink, thumb muted → inverse-text.
+Sized for desktop (larger than web 40×22).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from akana.theme import get_theme
-from akana.tokens import SPACE
+from akana.tokens import SPACE, TOGGLE_H, TOGGLE_THUMB, TOGGLE_W
 from akana.util import hand_cursor
 
 
@@ -20,10 +20,10 @@ class AkToggle(QWidget):
 
     toggled = pyqtSignal(bool)
 
-    TRACK_W = 40
-    TRACK_H = 22
-    THUMB = 16
-    PAD = 2
+    TRACK_W = TOGGLE_W
+    TRACK_H = TOGGLE_H
+    THUMB = TOGGLE_THUMB
+    PAD = 3
 
     def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
         super().__init__(parent)

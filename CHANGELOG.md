@@ -4,6 +4,18 @@ All notable changes to **Akana Qt** are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning follows
 [SemVer](https://semver.org/). Aligned with web Akana tags where practical.
 
+## [0.5.3] - 2026-07-16
+
+### Changed
+- **Control scale (desktop):** larger hit targets across the system.
+  - Inputs/selects `44 → 48` (`CONTROL_H`)
+  - Buttons md/sm/lg `44 / 36 / 52` with roomier horizontal padding
+  - Nav items `44`, tabs taller, pagination `36 → 40`
+  - Toggle `44×24`, checkbox `20`, radio `18`, badge `28`
+  - Title bar `48`, modal `480`, table rows `52`
+  - UI type steps: sm `15`, xs `13`, 2xs `12` (Qt reads smaller than CSS)
+- App default font `11pt`; theme chip uses real `sm` button height.
+
 ## [0.5.2] - 2026-07-16
 
 ### Changed

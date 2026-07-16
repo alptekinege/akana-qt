@@ -10,12 +10,12 @@ from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import QButtonGroup, QRadioButton, QVBoxLayout, QWidget
 
 from akana.theme import get_theme
-from akana.tokens import SPACE
+from akana.tokens import RADIO_BOX, SPACE
 from akana.util import hand_cursor
 
 
 class AkRadio(QRadioButton):
-    BOX = 16
+    BOX = RADIO_BOX
 
     def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
@@ -54,7 +54,7 @@ class AkRadio(QRadioButton):
             p.setPen(QPen(QColor(t["ink"]), 2.0))
             p.drawEllipse(box.adjusted(-3, -3, 3, 3))
 
-        text_x = self.BOX + 12
+        text_x = self.BOX + 14
         text_rect = self.rect().adjusted(text_x, 0, 0, 0)
         p.setPen(QColor(t["text"] if enabled else t["text_muted"]))
         p.setFont(self.font())
@@ -68,8 +68,8 @@ class AkRadio(QRadioButton):
     def sizeHint(self):  # noqa: N802
         sh = super().sizeHint()
         fm = self.fontMetrics()
-        w = self.BOX + 12 + fm.horizontalAdvance(self.text()) + 4
-        h = max(self.BOX + 4, fm.height() + 4)
+        w = self.BOX + 14 + fm.horizontalAdvance(self.text()) + 8
+        h = max(self.BOX + 8, fm.height() + 8)
         sh.setWidth(w)
         sh.setHeight(h)
         return sh

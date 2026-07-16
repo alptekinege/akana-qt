@@ -5,7 +5,8 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QWidget
 
-from akana.tokens import SPACE
+from akana.tokens import PAGE_BTN, SPACE
+from akana.util import hand_cursor
 
 
 class AkPagination(QFrame):
@@ -24,6 +25,7 @@ class AkPagination(QFrame):
         self._total = max(1, total_pages)
         self._current = min(max(1, current), self._total)
         self._page_btns: list[QPushButton] = []
+        side = PAGE_BTN
 
         self._layout = QHBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
@@ -32,8 +34,8 @@ class AkPagination(QFrame):
 
         self._prev = QPushButton("‹")
         self._prev.setObjectName("akPageBtn")
-        self._prev.setFixedSize(36, 36)
-        self._prev.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._prev.setFixedSize(side, side)
+        hand_cursor(self._prev)
         self._prev.clicked.connect(lambda: self.set_page(self._current - 1))
         self._layout.addWidget(self._prev)
 
@@ -41,8 +43,8 @@ class AkPagination(QFrame):
             btn = QPushButton(str(n))
             btn.setObjectName("akPageBtn")
             btn.setCheckable(True)
-            btn.setFixedSize(36, 36)
-            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setFixedSize(side, side)
+            hand_cursor(btn)
             page = n
             btn.clicked.connect(lambda _=False, p=page: self.set_page(p))
             self._layout.addWidget(btn)
@@ -50,8 +52,8 @@ class AkPagination(QFrame):
 
         self._next = QPushButton("›")
         self._next.setObjectName("akPageBtn")
-        self._next.setFixedSize(36, 36)
-        self._next.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._next.setFixedSize(side, side)
+        hand_cursor(self._next)
         self._next.clicked.connect(lambda: self.set_page(self._current + 1))
         self._layout.addWidget(self._next)
 

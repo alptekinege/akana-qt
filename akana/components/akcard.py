@@ -9,7 +9,7 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
-from akana.tokens import SPACE
+from akana.tokens import CARD_ICON, SPACE
 
 
 class AkCard(QFrame):
@@ -37,7 +37,7 @@ class AkCard(QFrame):
             self._icon = QLabel()
             self._icon.setObjectName("akCardIcon")
             self._icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._icon.setFixedSize(38, 38)
+            self._icon.setFixedSize(CARD_ICON, CARD_ICON)
             self._icon.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
             self._root.insertWidget(0, self._icon)
         self._icon.setText(glyph)

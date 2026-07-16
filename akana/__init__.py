@@ -6,7 +6,7 @@ Port of web Akana (https://github.com/alptekinege/Akana) v0.5:
 
 from akana import fonts, icons, styles, theme, tokens, util, winchrome
 
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 
 __all__ = [
     "tokens",
