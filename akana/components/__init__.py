@@ -14,9 +14,11 @@ from akana.components.aknav import AkNav, AkNavItem, AkNavRail
 from akana.components.akpagination import AkPagination
 from akana.components.akradio import AkRadio, AkRadioGroup
 from akana.components.akselect import AkSelect
+from akana.components.akshowcase import AkPanel, AkShowcaseSection, AkStyleBoard
 from akana.components.aktable import AkTable
 from akana.components.aktabs import AkTabs
 from akana.components.aktextarea import AkTextarea
+from akana.components.aktitlebar import AkTitleBar
 from akana.components.aktoggle import AkToggle, AkToggleSwitch
 
 __all__ = [
@@ -35,12 +37,16 @@ __all__ = [
     "AkNavItem",
     "AkNavRail",
     "AkPagination",
+    "AkPanel",
     "AkRadio",
     "AkRadioGroup",
     "AkSelect",
+    "AkShowcaseSection",
+    "AkStyleBoard",
     "AkTable",
     "AkTabs",
     "AkTextarea",
+    "AkTitleBar",
     "AkToggle",
     "AkToggleSwitch",
 ]

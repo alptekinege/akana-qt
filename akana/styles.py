@@ -35,9 +35,12 @@ def build() -> str:
     inv_text = t["inverse_text"]
 
     return f"""
-/* ---- Base ---- */
+/* ---- Base ----
+   Intermediate QWidgets stay transparent so toolbars/panels don't show
+   nested "boxes" (opaque child edges on a different surface).
+*/
 QWidget {{
-    background-color: {bg};
+    background-color: transparent;
     color: {text};
     font-family: {ty.family_ui};
     font-size: {fs["md"]}px;
@@ -46,11 +49,24 @@ QMainWindow, QDialog {{
     background-color: {bg};
     color: {text};
 }}
+QFrame#akWindowRoot {{
+    background-color: {bg};
+    border: {bw}px solid {border_s};
+}}
+QFrame#akWindowRoot[maximized="true"] {{
+    border: none;
+}}
 QLabel {{
     background: transparent;
     color: {text};
 }}
 QLabel#akTitle {{
+    font-size: {fs["2xl"]}px;
+    font-weight: 600;
+    letter-spacing: {ty.tracking_tight};
+    color: {ink};
+}}
+QLabel#akSectionTitle {{
     font-size: {fs["xl"]}px;
     font-weight: 500;
     letter-spacing: {ty.tracking_tight};
@@ -60,6 +76,12 @@ QLabel#akBrand {{
     font-size: {fs["lg"]}px;
     font-weight: 600;
     color: {ink};
+}}
+QLabel#akBrandSub {{
+    font-family: {ty.family_mono};
+    font-size: {fs["2xs"]}px;
+    letter-spacing: {ty.tracking_label};
+    color: {text_mut};
 }}
 QLabel#akLabel {{
     font-family: {ty.family_mono};
@@ -72,6 +94,16 @@ QLabel#akLabel {{
 QLabel#akMuted {{
     color: {text_sec};
     font-size: {fs["sm"]}px;
+}}
+QLabel#akLead {{
+    color: {text_sec};
+    font-size: {fs["md"]}px;
+    max-width: 52ch;
+}}
+QLabel#akPanelTitle {{
+    font-size: {fs["sm"]}px;
+    font-weight: 500;
+    color: {ink};
 }}
 QFrame#akSidebar {{
     background-color: {surface};
@@ -89,11 +121,131 @@ QFrame#akDivider {{
     min-height: 1px;
 }}
 QScrollArea {{
-    background: {bg};
+    background-color: {bg};
     border: none;
 }}
-QScrollArea > QWidget > QWidget {{
-    background: {bg};
+QScrollArea > QWidget {{
+    background-color: {bg};
+}}
+QAbstractScrollArea::viewport {{
+    background-color: {bg};
+}}
+
+/* ---- Title bar (frameless chrome) ---- */
+AkTitleBar, QFrame#AkTitleBar {{
+    background-color: {surface};
+    border: none;
+    border-bottom: {bw}px solid {border};
+}}
+QLabel#akTitleMark {{
+    color: {ink};
+    font-size: {fs["sm"]}px;
+    padding-right: 2px;
+}}
+QLabel#akTitleBarLabel {{
+    font-size: {fs["sm"]}px;
+    font-weight: 500;
+    color: {ink};
+}}
+QLabel#akTitleBarMeta {{
+    font-family: {ty.family_mono};
+    font-size: {fs["2xs"]}px;
+    letter-spacing: {ty.tracking_label};
+    color: {text_mut};
+    padding-left: 8px;
+}}
+QPushButton#akTitleBtn {{
+    background: transparent;
+    color: {text_sec};
+    border: none;
+    border-radius: {r.sm}px;
+    font-size: 14px;
+    padding: 0;
+}}
+QPushButton#akTitleBtn:hover {{
+    background-color: {surface_2};
+    color: {ink};
+}}
+QPushButton#akTitleBtn[role="close"]:hover {{
+    background-color: {ink};
+    color: {inv_text};
+}}
+
+/* ---- Showcase / panels ---- */
+AkShowcaseSection, QFrame#AkShowcaseSection {{
+    background-color: transparent;
+    border: none;
+}}
+AkStyleBoard, QFrame#AkStyleBoard {{
+    background-color: transparent;
+    border: none;
+}}
+QFrame#AkStyleCell {{
+    background-color: {bg};
+    border: {bw}px solid {border};
+    border-radius: {r.lg}px;
+}}
+AkPanel, QFrame#AkPanel {{
+    background-color: {bg};
+    border: {bw}px solid {border};
+    border-radius: {r.lg}px;
+}}
+/* Toolbar strip: no double-chrome; children sit on one surface */
+QFrame#akToolbar {{
+    background-color: {surface};
+    border: {bw}px solid {border};
+    border-radius: {r.lg}px;
+}}
+QFrame#akToolbar QWidget {{
+    background-color: transparent;
+}}
+AkPanel[tone="surface"], QFrame#AkPanel[tone="surface"] {{
+    background-color: {surface};
+    border-color: {border};
+}}
+AkPanel[tone="ink"], QFrame#AkPanel[tone="ink"] {{
+    background-color: {ink};
+    border-color: {ink};
+}}
+AkPanel[tone="ink"] QLabel,
+QFrame#AkPanel[tone="ink"] QLabel {{
+    color: {inv_text};
+}}
+AkPanel[tone="ink"] QLabel#akLabel,
+QFrame#AkPanel[tone="ink"] QLabel#akLabel {{
+    color: {border_s};
+}}
+AkPanel[tone="ink"] QLabel#akPanelTitle,
+QFrame#AkPanel[tone="ink"] QLabel#akPanelTitle {{
+    color: {inv_text};
+}}
+AkPanel[tone="ink"] QLabel#akMuted,
+QFrame#AkPanel[tone="ink"] QLabel#akMuted {{
+    color: {border_s};
+}}
+/* Ghost on ink: lighten hover */
+AkPanel[tone="ink"] AkButton[variant="ghost"],
+QFrame#AkPanel[tone="ink"] AkButton[variant="ghost"] {{
+    color: {inv_text};
+}}
+AkPanel[tone="ink"] AkButton[variant="ghost"]:hover,
+QFrame#AkPanel[tone="ink"] AkButton[variant="ghost"]:hover {{
+    background-color: {border};
+    color: {inv_text};
+}}
+AkPanel[tone="dashed"], QFrame#AkPanel[tone="dashed"] {{
+    background-color: {surface};
+    border: {bw}px dashed {border_s};
+}}
+QFrame#akPageHero {{
+    background: transparent;
+    border: none;
+    border-bottom: {bw}px solid {border};
+    padding-bottom: 4px;
+}}
+QFrame#akContentChrome {{
+    background-color: {bg};
+    border: none;
 }}
 
 /* ---- Button ---- */
@@ -143,26 +295,53 @@ AkButton[variant="ghost"]:disabled {{
     background-color: transparent;
     color: {text_mut};
 }}
+/* Inverse: for use on ink / solid surfaces */
+AkButton[variant="inverse"] {{
+    background-color: {inv_text};
+    color: {ink};
+    border: {bw}px solid transparent;
+}}
+AkButton[variant="inverse"]:hover {{
+    background-color: {inv_text};
+    color: {ink};
+}}
+AkButton[variant="inverse"]:disabled {{
+    background-color: {border_s};
+    color: {text_mut};
+}}
 AkButton[akSize="sm"] {{ padding: 7px 12px; font-size: {fs["xs"]}px; }}
 AkButton[akSize="lg"] {{ padding: 13px 22px; font-size: {fs["md"]}px; }}
 
-/* ---- Nav ---- */
+/* ---- Nav ----
+   Always reserve 1px border so checked state doesn't change geometry
+   (avoids clipped bottom edge / layout jump).
+*/
 QPushButton#akNavItem {{
     background-color: transparent;
     color: {text_sec};
-    border: none;
+    border: {bw}px solid transparent;
     border-radius: {r.md}px;
-    padding: 9px 14px;
+    padding: 10px 14px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
     font-weight: 500;
     text-align: left;
 }}
-QPushButton#akNavItem:hover {{ color: {text}; background-color: {surface_2}; }}
+QPushButton#akNavItem:hover {{
+    color: {text};
+    background-color: {surface_2};
+    border: {bw}px solid transparent;
+}}
 QPushButton#akNavItem:checked {{
     color: {ink};
     background-color: {bg};
     border: {bw}px solid {border};
+    font-weight: 600;
+}}
+QPushButton#akNavItem:checked:hover {{
+    background-color: {bg};
+    border: {bw}px solid {border};
+    color: {ink};
 }}
 
 /* ---- Card ---- */

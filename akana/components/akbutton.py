@@ -11,7 +11,7 @@ from typing import Literal
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QPushButton, QWidget
 
-Variant = Literal["primary", "secondary", "ghost"]
+Variant = Literal["primary", "secondary", "ghost", "inverse"]
 Size = Literal["sm", "md", "lg"]
 
 

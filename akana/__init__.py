@@ -4,14 +4,15 @@ Port of web Akana (https://github.com/alptekinege/Akana):
 3-layer tokens, no accent color, bundled IBM Plex TTF.
 """
 
-from akana import fonts, styles, theme, tokens
+from akana import fonts, styles, theme, tokens, winchrome
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     "tokens",
     "theme",
     "styles",
     "fonts",
+    "winchrome",
     "__version__",
 ]

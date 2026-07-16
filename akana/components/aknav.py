@@ -6,7 +6,7 @@ Mirrors web `.ak-nav` / `.ak-nav__item` active states (weight + surface).
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QFrame, QPushButton, QSizePolicy, QVBoxLayout, QWidget
 
 from akana.tokens import SPACE
 
@@ -22,11 +22,22 @@ class AkNavItem(QPushButton):
         super().__init__(text, parent)
         self.setObjectName("akNavItem")
         self.setCheckable(True)
+        self.setAutoExclusive(False)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFlat(True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        # Avoid default button min-height clipping the bottom border.
+        self.setMinimumHeight(40)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
     def set_active(self, active: bool) -> None:
         self.setChecked(active)
+        # Force style re-eval so border/background paint cleanly.
+        style = self.style()
+        if style is not None:
+            style.unpolish(self)
+            style.polish(self)
+        self.update()
 
 
 class AkNavRail(QFrame):
