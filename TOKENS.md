@@ -51,6 +51,7 @@ Components use **semantic** keys only (`bg`, `ink`, `text`, …).
 ## Type (desktop px)
 
 Qt UI is nudged up one step vs browser CSS so controls stay legible.
+`TypographyTokens.scale` mirrors `FS`.
 
 | Key | px | Role |
 |-----|----|------|
@@ -71,11 +72,15 @@ Tracking: tight `-0.02em`, label `0.06em`.
 
 - `SPACE`: 1→4, 2→8, … 20→80 (4px base)
 - Radius: sm 4 · md 8 · lg 12 · pill 999
-- `CONTROL_H` = 48 (input / select)
+- `BORDER_W` = 1 · `FOCUS_W` = 2 (fixed focus ring; no layout jump)
+- `CONTROL_H` = 48 (input / select; web 44)
 - `BUTTON_H` / `_SM` / `_LG` = 44 / 36 / 52
-- `NAV_ITEM_H` = 44 · `PAGE_BTN` = 40 · `TITLEBAR_H` = 48
+- `NAV_ITEM_H` = 44 · `NAV_STRIP_H` = 40 · `TAB_H` = 44 · `PAGE_BTN` = 40
+- `TITLEBAR_H` = 48 · `TITLE_BTN_W×H` = 44×36
 - `TOGGLE_W×H` = 44×24 · `CHECK_BOX` = 20 · `RADIO_BOX` = 18 · `BADGE_H` = 28
-- `MAX_W` = 1080 (gallery column) · `MODAL_W` = 480
+- `TEXTAREA_MIN_H` = 140 · `EMPTY_ICON` = 52 · `CARD_ICON` = 40
+- `MAX_W` = 1080 · `LEAD_W` = 560 · `EMPTY_BODY_W` = 360 · `MODAL_W` = 480
+- `SCROLL_W` = 10 · `SIZE_GRIP` = 16
 - Motion: 120ms fast · 200ms base (reference only; QSS transitions limited)
 
 ## Contrast targets

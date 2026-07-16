@@ -6,10 +6,10 @@ on the control via dynamic property `akError` (no red accent).
 
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from akana.tokens import SPACE
-from akana.util import set_dyn
+from akana.util import AkFlowLabel, set_dyn
 
 
 class AkField(QWidget):
@@ -25,6 +25,7 @@ class AkField(QWidget):
     ) -> None:
         super().__init__(parent)
         self.setObjectName("AkField")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -37,11 +38,12 @@ class AkField(QWidget):
 
         self._control = control
         if control is not None:
+            control.setSizePolicy(
+                QSizePolicy.Policy.Expanding, control.sizePolicy().verticalPolicy()
+            )
             root.addWidget(control)
 
-        self._helper = QLabel(helper)
-        self._helper.setObjectName("akHelper")
-        self._helper.setWordWrap(True)
+        self._helper = AkFlowLabel(helper, object_name="akHelper")
         self._helper.setVisible(bool(helper))
         root.addWidget(self._helper)
 

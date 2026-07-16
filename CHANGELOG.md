@@ -4,6 +4,37 @@ All notable changes to **Akana Qt** are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning follows
 [SemVer](https://semver.org/). Aligned with web Akana tags where practical.
 
+## [0.5.4] - 2026-07-16
+
+### Fixed
+- **Gallery layout width:** `Page` / `AkPanel` / `AkShowcaseSection` no longer
+  `AlignLeft`-clamp children to sizeHint — tables and boards fill the content
+  column (was truncating `NAME` / `STATUS` while leaving empty space on the right).
+- **Section lead overlap:** more title→lead spacing + lead padding so wrapped
+  lines do not stack on top of each other.
+- **Working strip / preview clipping:** panel vertical policy `Minimum` (not
+  `Maximum`); larger page top/section spacing so borders and toolbars are not
+  painted under the next block or the scroll edge.
+- **Empty states:** expand with parent; body no longer hard-capped in a way that
+  hides CTAs; dashed first-run block keeps actions visible.
+- **Pagination active ring:** fixed square + zero padding + constant border so
+  the “1” ring no longer shifts downward.
+- **Accordion rows:** min-height on triggers so collapsed dividers are not
+  compressed into a tight stack.
+- **Link-card focus jump:** rest border is `FOCUS_W` (2px), matching focus.
+- **Select height:** max height locked to `CONTROL_H` (parity with input).
+- **Working strip density:** toolbar actions use `md` so they align with inputs.
+
+### Changed
+- **Design-system polish** against web Akana v0.5 + skill invariants:
+  - Named geometry tokens: `FOCUS_W`, `LEAD_W`, `TAB_H`, `NAV_STRIP_H`,
+    `TEXTAREA_MIN_H`, `EMPTY_BODY_W`, `TITLE_BTN_*`, `SCROLL_W`, `SIZE_GRIP`
+  - QSS and components read those tokens — fewer bare pixel literals
+  - `TypographyTokens.scale` synced with desktop `FS` (12…48)
+  - Tab focus ring (underline ink); painted controls use `FOCUS_W` / `RADIUS`
+  - Modal shadow theme detection via `current_name()` (not ink hex match)
+  - Docs aligned: `CONTROL_H` 48 desktop, label type 12px, token tables complete
+
 ## [0.5.3] - 2026-07-16
 
 ### Changed

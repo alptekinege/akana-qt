@@ -22,12 +22,19 @@ def build() -> str:
     fs = tokens.FS
     s = tokens.SPACE
     bw = tokens.BORDER_W
+    fw = tokens.FOCUS_W
     ch = tokens.CONTROL_H
     btn_h = tokens.BUTTON_H
     btn_sm = tokens.BUTTON_H_SM
     btn_lg = tokens.BUTTON_H_LG
     page_btn = tokens.PAGE_BTN
     nav_h = tokens.NAV_ITEM_H
+    nav_strip_h = tokens.NAV_STRIP_H
+    tab_h = tokens.TAB_H
+    lead_w = tokens.LEAD_W
+    textarea_h = tokens.TEXTAREA_MIN_H
+    scroll_w = tokens.SCROLL_W
+    size_grip = tokens.SIZE_GRIP
 
     ink = t["ink"]
     ink_hover = t["ink_hover"]
@@ -117,7 +124,8 @@ QLabel#akMuted {{
 QLabel#akLead {{
     color: {text_sec};
     font-size: {fs["lg"]}px;
-    max-width: 560px;
+    /* No QSS padding/max-height — those clip 2nd lines (heightForWidth bug).
+       Width cap + spacing live on AkFlowLabel / layout instead. */
 }}
 QLabel#akPanelTitle {{
     font-size: {fs["sm"]}px;
@@ -180,14 +188,14 @@ QLabel#akTitleBarMeta {{
     font-size: {fs["2xs"]}px;
     letter-spacing: {ty.tracking_label};
     color: {text_mut};
-    padding-left: 8px;
+    padding-left: {s[2]}px;
 }}
 QPushButton#akTitleBtn {{
     background: transparent;
     color: {text_sec};
     border: none;
     border-radius: {r.sm}px;
-    font-size: 14px;
+    font-size: {fs["sm"]}px;
     padding: 0;
 }}
 QPushButton#akTitleBtn:hover {{
@@ -200,12 +208,20 @@ QPushButton#akTitleBtn[role="close"]:hover {{
 }}
 
 /* Showcase */
-AkShowcaseSection, QFrame#AkShowcaseSection {{ background: transparent; border: none; }}
-AkStyleBoard, QFrame#AkStyleBoard {{ background: transparent; border: none; }}
+AkShowcaseSection, QFrame#AkShowcaseSection {{
+    background: transparent;
+    border: none;
+}}
+AkStyleBoard, QFrame#AkStyleBoard {{
+    background: transparent;
+    border: none;
+}}
 QFrame#AkStyleCell {{
     background-color: {bg};
     border: {bw}px solid {border};
     border-radius: {r.lg}px;
+    /* prevent paint clipping of 1px top border under scroll */
+    margin-top: 0;
 }}
 AkPanel, QFrame#AkPanel {{
     background-color: {bg};
@@ -265,17 +281,19 @@ QLabel#akSwatchName {{
     color: {text_sec};
 }}
 
-/* Link card (gallery index) */
+/* Link card (gallery index)
+   Always FOCUS_W border so keyboard focus never jumps layout (AGENTS rule).
+*/
 AkLinkCard, QFrame#AkLinkCard {{
     background-color: {bg};
-    border: {bw}px solid {border};
+    border: {fw}px solid {border};
     border-radius: {r.lg}px;
 }}
 AkLinkCard[hovered="true"], QFrame#AkLinkCard[hovered="true"] {{
     border-color: {border_s};
 }}
 AkLinkCard:focus, QFrame#AkLinkCard:focus {{
-    border: 2px solid {ink};
+    border: {fw}px solid {ink};
 }}
 QLabel#akLinkName {{
     font-size: {fs["lg"]}px;
@@ -300,13 +318,13 @@ AkLinkCard[hovered="true"] QLabel#akLinkGo {{
 }}
 
 /* ========== Button ==========
-   Always 2px border → focus never shifts layout.
+   Always FOCUS_W border → focus never shifts layout.
    Heights tuned for desktop hit targets (larger than web CSS padding alone).
 */
 AkButton {{
     background-color: {ink};
     color: {inv_text};
-    border: 2px solid transparent;
+    border: {fw}px solid transparent;
     border-radius: {r.md}px;
     padding: 0 18px;
     font-family: {ty.family_ui};
@@ -320,19 +338,19 @@ AkButton:pressed {{ background-color: {ink_active}; color: {inv_text}; }}
 AkButton:disabled {{
     background-color: {surface_2};
     color: {text_mut};
-    border: 2px solid {border};
+    border: {fw}px solid {border};
 }}
-AkButton:focus {{ border: 2px solid {ink}; }}
+AkButton:focus {{ border: {fw}px solid {ink}; }}
 
 AkButton[variant="secondary"] {{
     background-color: transparent;
     color: {text};
-    border: 2px solid {border_s};
+    border: {fw}px solid {border_s};
 }}
 AkButton[variant="secondary"]:hover {{
     background-color: {surface_2};
     color: {text};
-    border: 2px solid {border_s};
+    border: {fw}px solid {border_s};
 }}
 AkButton[variant="secondary"]:pressed {{
     background-color: {surface};
@@ -341,24 +359,24 @@ AkButton[variant="secondary"]:pressed {{
 AkButton[variant="secondary"]:disabled {{
     background-color: transparent;
     color: {text_mut};
-    border: 2px solid {border};
+    border: {fw}px solid {border};
 }}
-AkButton[variant="secondary"]:focus {{ border: 2px solid {ink}; }}
+AkButton[variant="secondary"]:focus {{ border: {fw}px solid {ink}; }}
 
 AkButton[variant="ghost"] {{
     background-color: transparent;
     color: {text};
-    border: 2px solid transparent;
+    border: {fw}px solid transparent;
 }}
 AkButton[variant="ghost"]:hover {{ background-color: {surface_2}; color: {text}; }}
 AkButton[variant="ghost"]:pressed {{ background-color: {surface}; color: {ink}; }}
 AkButton[variant="ghost"]:disabled {{ color: {text_mut}; background: transparent; }}
-AkButton[variant="ghost"]:focus {{ border: 2px solid {ink}; }}
+AkButton[variant="ghost"]:focus {{ border: {fw}px solid {ink}; }}
 
 AkButton[variant="inverse"] {{
     background-color: {inv_text};
     color: {inv_bg};
-    border: 2px solid transparent;
+    border: {fw}px solid transparent;
 }}
 AkButton[variant="inverse"]:hover {{
     background-color: {surface};
@@ -372,7 +390,7 @@ AkButton[variant="inverse"]:disabled {{
     background-color: {border_s};
     color: {text_mut};
 }}
-AkButton[variant="inverse"]:focus {{ border: 2px solid {inv_text}; }}
+AkButton[variant="inverse"]:focus {{ border: {fw}px solid {inv_text}; }}
 
 AkButton[akSize="sm"] {{
     padding: 0 14px;
@@ -391,9 +409,9 @@ AkButton[akSize="lg"] {{
 QPushButton#akNavItem {{
     background-color: transparent;
     color: {text_sec};
-    border: 2px solid transparent;
+    border: {fw}px solid transparent;
     border-radius: {r.md}px;
-    padding: 0 16px;
+    padding: 0 {s[4]}px;
     min-height: {nav_h}px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
@@ -407,10 +425,10 @@ QPushButton#akNavItem:hover {{
 QPushButton#akNavItem:checked {{
     color: {ink};
     background-color: {bg};
-    border: 2px solid {border};
+    border: {fw}px solid {border};
     font-weight: 600;
 }}
-QPushButton#akNavItem:focus {{ border: 2px solid {ink}; }}
+QPushButton#akNavItem:focus {{ border: {fw}px solid {ink}; }}
 
 AkNavStrip, QFrame#AkNavStrip {{
     background-color: {surface};
@@ -420,10 +438,10 @@ AkNavStrip, QFrame#AkNavStrip {{
 QPushButton#akNavStripItem {{
     background-color: transparent;
     color: {text_sec};
-    border: 2px solid transparent;
+    border: {fw}px solid transparent;
     border-radius: {r.md}px;
-    padding: 0 16px;
-    min-height: 40px;
+    padding: 0 {s[4]}px;
+    min-height: {nav_strip_h}px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
     font-weight: 500;
@@ -435,18 +453,19 @@ QPushButton#akNavStripItem:hover {{
 QPushButton#akNavStripItem:checked {{
     color: {ink};
     background-color: {bg};
-    border: 2px solid transparent;
+    border: {fw}px solid transparent;
     font-weight: 600;
 }}
-QPushButton#akNavStripItem:focus {{ border: 2px solid {ink}; }}
+QPushButton#akNavStripItem:focus {{ border: {fw}px solid {ink}; }}
 
 /* ========== Card ========== */
 AkCard {{
     background-color: {bg};
-    border: {bw}px solid {border};
+    border: {fw}px solid {border};
     border-radius: {r.lg}px;
 }}
 AkCard:hover {{ border-color: {border_s}; }}
+AkCard:focus {{ border: {fw}px solid {ink}; }}
 QLabel#akCardTitle {{
     font-size: {fs["lg"]}px;
     font-weight: 500;
@@ -481,12 +500,12 @@ QLabel#akCardIcon {{
 }}
 
 /* ========== Input / Textarea / Select ==========
-   Always 2px border; rest color = border_strong.
+   Always FOCUS_W border; rest color = border_strong.
 */
 AkInput, QLineEdit {{
     background-color: {bg};
     color: {text};
-    border: 2px solid {border_s};
+    border: {fw}px solid {border_s};
     border-radius: {r.md}px;
     padding: 0 13px;
     min-height: {ch}px;
@@ -497,51 +516,52 @@ AkInput, QLineEdit {{
     selection-color: {inv_text};
 }}
 AkInput:hover, QLineEdit:hover {{ border-color: {ink}; }}
-AkInput:focus, QLineEdit:focus {{ border: 2px solid {ink}; }}
+AkInput:focus, QLineEdit:focus {{ border: {fw}px solid {ink}; }}
 AkInput:disabled, QLineEdit:disabled {{
     color: {text_mut};
     background-color: {surface_2};
     border-color: {border};
 }}
 AkInput[akError="true"], QLineEdit[akError="true"] {{
-    border: 2px solid {ink};
+    border: {fw}px solid {ink};
 }}
 
 AkTextarea, QPlainTextEdit, QTextEdit {{
     background-color: {bg};
     color: {text};
-    border: 2px solid {border_s};
+    border: {fw}px solid {border_s};
     border-radius: {r.md}px;
     padding: 11px 13px;
-    min-height: 140px;
+    min-height: {textarea_h}px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
     selection-background-color: {ink};
     selection-color: {inv_text};
 }}
 AkTextarea:hover, QPlainTextEdit:hover, QTextEdit:hover {{ border-color: {ink}; }}
-AkTextarea:focus, QPlainTextEdit:focus, QTextEdit:focus {{ border: 2px solid {ink}; }}
+AkTextarea:focus, QPlainTextEdit:focus, QTextEdit:focus {{ border: {fw}px solid {ink}; }}
 AkTextarea:disabled, QPlainTextEdit:disabled, QTextEdit:disabled {{
     color: {text_mut};
     background-color: {surface_2};
     border-color: {border};
 }}
 AkTextarea[akError="true"], QPlainTextEdit[akError="true"] {{
-    border: 2px solid {ink};
+    border: {fw}px solid {ink};
 }}
 
 AkSelect, QComboBox {{
     background-color: {bg};
     color: {text};
-    border: 2px solid {border_s};
+    border: {fw}px solid {border_s};
     border-radius: {r.md}px;
     padding: 0 13px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
     min-height: {ch}px;
+    max-height: {ch}px;
 }}
 AkSelect:hover, QComboBox:hover {{ border-color: {ink}; }}
-AkSelect:focus, QComboBox:focus {{ border: 2px solid {ink}; }}
+AkSelect:focus, QComboBox:focus {{ border: {fw}px solid {ink}; }}
 AkSelect:disabled, QComboBox:disabled {{
     color: {text_mut};
     background-color: {surface_2};
@@ -549,7 +569,7 @@ AkSelect:disabled, QComboBox:disabled {{
 }}
 AkSelect::drop-down, QComboBox::drop-down {{
     border: none;
-    width: 28px;
+    width: {s[6]}px;
 }}
 AkSelect::down-arrow, QComboBox::down-arrow {{
     width: 0;
@@ -557,7 +577,7 @@ AkSelect::down-arrow, QComboBox::down-arrow {{
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
     border-top: 5px solid {text_mut};
-    margin-right: 10px;
+    margin-right: {s[2]}px;
 }}
 AkSelect QAbstractItemView, QComboBox QAbstractItemView {{
     background: {bg};
@@ -566,7 +586,7 @@ AkSelect QAbstractItemView, QComboBox QAbstractItemView {{
     selection-background-color: {surface_2};
     selection-color: {ink};
     outline: none;
-    padding: 4px;
+    padding: {s[1]}px;
 }}
 
 /* Hide native checkbox/radio indicators — custom paintEvent owns them */
@@ -577,9 +597,12 @@ AkCheckbox::indicator, AkRadio::indicator {{
     background: transparent;
 }}
 
-/* ========== Badge ========== */
+/* ========== Badge ==========
+   Default: surface_2 + strong border + body text so pills stay legible on
+   dark table rows (surface-on-surface was nearly invisible in screenshots).
+*/
 AkBadge, QFrame#AkBadge {{
-    background-color: {surface};
+    background-color: {surface_2};
     border: {bw}px solid {border_s};
     border-radius: {r.pill}px;
 }}
@@ -588,7 +611,7 @@ AkBadge QLabel, QFrame#AkBadge QLabel {{
     font-size: {fs["2xs"]}px;
     font-weight: 500;
     letter-spacing: {ty.tracking_label};
-    color: {text_sec};
+    color: {text};
     background: transparent;
 }}
 AkBadge[variant="solid"], QFrame#AkBadge[variant="solid"] {{
@@ -650,10 +673,10 @@ QPushButton#akTab {{
     background: transparent;
     color: {text_sec};
     border: none;
-    border-bottom: 2px solid transparent;
+    border-bottom: {fw}px solid transparent;
     border-radius: 0;
-    padding: 12px 16px;
-    min-height: 44px;
+    padding: {s[3]}px {s[4]}px;
+    min-height: {tab_h}px;
     margin-bottom: -1px;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
@@ -662,8 +685,12 @@ QPushButton#akTab {{
 QPushButton#akTab:hover {{ color: {text}; }}
 QPushButton#akTab:checked {{
     color: {ink};
-    border-bottom: 2px solid {ink};
+    border-bottom: {fw}px solid {ink};
     background: transparent;
+}}
+QPushButton#akTab:focus {{
+    color: {ink};
+    border-bottom: {fw}px solid {ink};
 }}
 
 /* ========== Accordion ========== */
@@ -672,7 +699,11 @@ AkAccordion {{
     border: {bw}px solid {border};
     border-radius: {r.lg}px;
 }}
-QFrame#akAccordionItem {{ background: transparent; border: none; }}
+QFrame#akAccordionItem {{
+    background: transparent;
+    border: none;
+    min-height: {s[12]}px;
+}}
 QFrame#akAccordionItem[divided="true"] {{
     border-top: {bw}px solid {border};
 }}
@@ -683,6 +714,7 @@ QPushButton#akAccordionTrigger {{
     border-radius: 0;
     text-align: left;
     padding: 0;
+    min-height: {s[12]}px;
 }}
 QPushButton#akAccordionTrigger:hover {{ background-color: {surface}; }}
 QLabel#akAccordionTitle {{
@@ -726,34 +758,49 @@ QLabel#akBreadcrumbCurrent {{
     background: transparent;
 }}
 
-/* ========== Pagination ========== */
-AkPagination {{ background: transparent; border: none; }}
+/* ========== Pagination ==========
+   Fixed square buttons: zero padding + constant FOCUS_W border so the
+   active ring never shifts the glyph (was shifting downward).
+*/
+AkPagination {{
+    background: transparent;
+    border: none;
+    min-height: {page_btn}px;
+}}
 QPushButton#akPageBtn {{
     background: transparent;
     color: {text_sec};
-    border: 2px solid transparent;
+    border: {fw}px solid transparent;
     border-radius: {r.md}px;
     min-width: {page_btn}px;
+    max-width: {page_btn}px;
     min-height: {page_btn}px;
-    padding: 0 {s[2]}px;
+    max-height: {page_btn}px;
+    padding: 0;
+    margin: 0;
     font-family: {ty.family_ui};
     font-size: {fs["sm"]}px;
     font-weight: 500;
+    text-align: center;
 }}
 QPushButton#akPageBtn:hover {{
     background-color: {surface};
     color: {text};
 }}
 QPushButton#akPageBtn:checked {{
-    border: 2px solid {ink};
+    border: {fw}px solid {ink};
     color: {ink};
     background-color: {bg};
+    padding: 0;
 }}
 QPushButton#akPageBtn:disabled {{
     color: {text_mut};
     background: transparent;
 }}
-QPushButton#akPageBtn:focus {{ border: 2px solid {ink}; }}
+QPushButton#akPageBtn:focus {{
+    border: {fw}px solid {ink};
+    padding: 0;
+}}
 
 /* ========== Table ========== */
 QFrame#AkTableWrap, AkTable {{
@@ -823,6 +870,7 @@ QLabel#akEmptyBody {{
     font-size: {fs["sm"]}px;
     color: {text_sec};
     background: transparent;
+    /* height comes from AkFlowLabel; do not pad here (clips wraps) */
 }}
 
 /* ========== Modal ========== */
@@ -840,31 +888,32 @@ QLabel#akModalTitle {{
 }}
 QFrame#akModalBody {{ background: transparent; border: none; }}
 
-/* Pattern block title */
+/* Pattern block title — keep clear of content above (no negative clip) */
 QLabel#akPatternTitle {{
     font-family: {ty.family_mono};
     font-size: {fs["xs"]}px;
     letter-spacing: {ty.tracking_label};
     text-transform: uppercase;
     color: {text_mut};
+    padding-top: {s[1]}px;
     padding-bottom: {s[3]}px;
     border-bottom: {bw}px solid {border};
-    margin-bottom: {s[2]}px;
+    margin-bottom: {s[3]}px;
 }}
 
 /* Scrollbar */
 QScrollBar:vertical, QScrollBar:horizontal {{
     background: {bg};
     border: none;
-    width: 10px;
-    height: 10px;
+    width: {scroll_w}px;
+    height: {scroll_w}px;
     margin: 0;
 }}
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {{
     background: {border};
-    border-radius: 5px;
-    min-height: 32px;
-    min-width: 32px;
+    border-radius: {scroll_w // 2}px;
+    min-height: {s[8]}px;
+    min-width: {s[8]}px;
 }}
 QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {{
     background: {text_mut};
@@ -872,7 +921,11 @@ QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {{
 QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; width: 0; }}
 QScrollBar::add-page, QScrollBar::sub-page {{ background: transparent; }}
 
-QSizeGrip {{ background: transparent; width: 16px; height: 16px; }}
+QSizeGrip {{
+    background: transparent;
+    width: {size_grip}px;
+    height: {size_grip}px;
+}}
 """
 
 
@@ -895,7 +948,7 @@ def _apply_placeholder_palette(root: QWidget) -> None:
     except Exception:
         return
 
-    muted = QColor(get_theme().get("text_muted", "#8a8a8a"))
+    muted = QColor(get_theme()["text_muted"])
     for cls in (QLineEdit, QPlainTextEdit, QTextEdit):
         for w in root.findChildren(cls):
             pal = w.palette()

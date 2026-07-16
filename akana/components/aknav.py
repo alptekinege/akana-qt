@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from akana.tokens import NAV_ITEM_H, SPACE
+from akana.tokens import NAV_ITEM_H, NAV_STRIP_H, SPACE
 from akana.util import hand_cursor
 
 
@@ -105,6 +105,7 @@ class AkNavStrip(QFrame):
     def add_item(self, text: str) -> AkNavItem:
         item = AkNavItem(text, self)
         item.setObjectName("akNavStripItem")
+        item.setMinimumHeight(NAV_STRIP_H)
         item.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         index = len(self._items)
         item.clicked.connect(lambda _=False, i=index: self.set_current_index(i))

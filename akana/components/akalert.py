@@ -8,11 +8,18 @@ from __future__ import annotations
 from typing import Literal
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from akana.icons import glyph
 from akana.tokens import SPACE
-from akana.util import set_dyn
+from akana.util import AkFlowLabel, set_dyn
 
 Variant = Literal["default", "strong", "solid"]
 
@@ -29,6 +36,7 @@ class AkAlert(QFrame):
         super().__init__(parent)
         self.setObjectName("AkAlert")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         root = QHBoxLayout(self)
         root.setContentsMargins(SPACE[5], SPACE[4], SPACE[5], SPACE[4])
@@ -44,15 +52,11 @@ class AkAlert(QFrame):
         col.setSpacing(SPACE[1])
         col.setContentsMargins(0, 0, 0, 0)
 
-        self._title = QLabel(title)
-        self._title.setObjectName("akAlertTitle")
-        self._title.setWordWrap(True)
+        self._title = AkFlowLabel(title, object_name="akAlertTitle")
         self._title.setVisible(bool(title))
         col.addWidget(self._title)
 
-        self._text = QLabel(text)
-        self._text.setObjectName("akAlertText")
-        self._text.setWordWrap(True)
+        self._text = AkFlowLabel(text, object_name="akAlertText")
         self._text.setVisible(bool(text))
         col.addWidget(self._text)
 

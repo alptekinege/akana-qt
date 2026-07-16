@@ -1,5 +1,5 @@
 ---
-version: 0.5.3
+version: 0.5.4
 name: Akana Qt
 description: Monochrome, text-first design system for PyQt6 (Ak + Ana). Ink-on-paper, no accent color, bundled IBM Plex TTF (SIL OFL 1.1). Port of web Akana.
 colors:
@@ -47,7 +47,7 @@ typography:
     lineHeight: 1.55
   label:
     fontFamily: "IBM Plex Mono"
-    fontSize: 11px
+    fontSize: 12px
     fontWeight: 500
     letterSpacing: "0.06em"
 rounded:
@@ -102,7 +102,8 @@ TTF (Qt cannot load woff2). Tokens: Python dicts + generated QSS.
 | Semantic | `akana/theme.py` `THEMES[light\|dark]` | Intent. Components read these. |
 | Component | QSS in `akana/styles.py` | Prefer local property selectors. |
 
-Layout tokens: `SPACE`, `FS`, `RADIUS`, `CONTROL_H` (44), `MAX_W` (1080).
+Layout tokens: `SPACE`, `FS`, `RADIUS`, `CONTROL_H` (48 desktop / 44 web),
+`FOCUS_W` (2), `LEAD_W` (560), `MAX_W` (1080).
 
 ## Theme
 

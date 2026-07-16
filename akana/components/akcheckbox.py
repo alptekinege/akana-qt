@@ -1,6 +1,7 @@
 """Akana Qt — monochrome checkbox with ink check mark.
 
-Mirrors web `.ak-choice` square: 18×18, radius-sm, checked = ink + inverse glyph.
+Mirrors web `.ak-choice` square: CHECK_BOX side, radius-sm,
+checked = ink + inverse glyph.
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from PyQt6.QtWidgets import QCheckBox, QStyle, QStyleOptionButton, QWidget
 
 from akana.icons import glyph
 from akana.theme import get_theme
-from akana.tokens import CHECK_BOX, FS
+from akana.tokens import CHECK_BOX, FOCUS_W, FS, RADIUS, SPACE
 from akana.util import hand_cursor
 
 
@@ -49,7 +50,7 @@ class AkCheckbox(QCheckBox):
 
         p.setPen(QPen(border, 1.0))
         p.setBrush(bg)
-        p.drawRoundedRect(box, 4, 4)
+        p.drawRoundedRect(box, RADIUS.sm, RADIUS.sm)
 
         if checked:
             p.setPen(QColor(t["inverse_text"] if enabled else t["text_muted"]))
@@ -61,11 +62,16 @@ class AkCheckbox(QCheckBox):
 
         if self.hasFocus():
             p.setBrush(Qt.BrushStyle.NoBrush)
-            p.setPen(QPen(QColor(t["ink"]), 2.0))
-            p.drawRoundedRect(box.adjusted(-2, -2, 2, 2), 5, 5)
+            p.setPen(QPen(QColor(t["ink"]), float(FOCUS_W)))
+            pad = FOCUS_W
+            p.drawRoundedRect(
+                box.adjusted(-pad, -pad, pad, pad),
+                RADIUS.sm + 1,
+                RADIUS.sm + 1,
+            )
 
         # Label
-        text_x = self.BOX + 14
+        text_x = self.BOX + SPACE[3] + 2
         text_rect = self.rect().adjusted(text_x, 0, 0, 0)
         color = QColor(t["text"] if enabled else t["text_muted"])
         p.setPen(color)
@@ -78,10 +84,14 @@ class AkCheckbox(QCheckBox):
         p.end()
 
     def sizeHint(self):  # noqa: N802
+        from akana.tokens import FOCUS_W, SPACE
+
         sh = super().sizeHint()
         fm = self.fontMetrics()
-        w = self.BOX + 14 + fm.horizontalAdvance(self.text()) + 8
-        h = max(self.BOX + 8, fm.height() + 8)
+        gap = SPACE[3] + 2
+        w = self.BOX + gap + fm.horizontalAdvance(self.text()) + SPACE[2]
+        # Room for focus ring outside the box
+        h = max(self.BOX + 2 * FOCUS_W + SPACE[2], fm.height() + SPACE[2])
         sh.setWidth(w)
         sh.setHeight(h)
         return sh

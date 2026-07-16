@@ -48,7 +48,16 @@ from akana.components import (
 )
 from akana.components.akshowcase import AkPanel, AkShowcaseSection, AkStyleBoard
 from akana.theme import current_name, get_theme, load_saved_theme, set_theme
-from akana.tokens import GRAY_PRIMITIVES, MAX_W, SPACE
+from akana.tokens import (
+    FS,
+    GRAY_PRIMITIVES,
+    LEAD_W,
+    MAX_W,
+    RADIUS,
+    SIZE_GRIP,
+    SPACE,
+)
+from akana.util import AkFlowLabel
 
 _EDGE = 6
 
@@ -105,7 +114,8 @@ class Page(QWidget):
     """Gallery page: left-weighted column, max measure, free space on the right.
 
     Not a centered marketing column — content starts under the sidebar edge
-    and stops at MAX_W. Titles/leads stay start-aligned.
+    and stops at MAX_W. Children expand horizontally so tables/panels fill
+    the content measure (AlignLeft-only was squeezing them to sizeHint).
     """
 
     def __init__(
@@ -119,62 +129,62 @@ class Page(QWidget):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
-        outer.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        outer.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # Horizontal: content left · slack right (never dual-stretch center)
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(0)
-        row.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        row.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         inner = QFrame()
         inner.setObjectName("akContentInner")
         inner.setMaximumWidth(MAX_W)
-        inner.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        # Preferred height grows with content (scroll area needs accurate height)
+        inner.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         root = QVBoxLayout(inner)
-        # Asymmetric: comfortable left pad, slightly larger right pad only if needed
-        root.setContentsMargins(SPACE[8], SPACE[6], SPACE[8], SPACE[12])
-        root.setSpacing(SPACE[8])
-        root.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        # Top pad leaves room for bordered preview cards at the scroll edge
+        root.setContentsMargins(SPACE[8], SPACE[8], SPACE[8], SPACE[16])
+        root.setSpacing(SPACE[10])
+        root.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         hero = QFrame()
         hero.setObjectName("akPageHero")
+        hero.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         hv = QVBoxLayout(hero)
-        hv.setContentsMargins(0, 0, 0, SPACE[5])
-        hv.setSpacing(SPACE[2])
-        hv.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        hv.setContentsMargins(0, 0, 0, SPACE[6])
+        hv.setSpacing(SPACE[3])
+        hv.setAlignment(Qt.AlignmentFlag.AlignTop)
         eye = QLabel(eyebrow)
         eye.setObjectName("akLabel")
-        hv.addWidget(eye, 0, Qt.AlignmentFlag.AlignLeft)
-        t = QLabel(title)
-        t.setObjectName("akTitle")
-        t.setWordWrap(True)
-        t.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        hv.addWidget(t, 0, Qt.AlignmentFlag.AlignLeft)
+        hv.addWidget(eye)
+        t = AkFlowLabel(title, object_name="akTitle")
+        t.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        hv.addWidget(t)
         if lead:
-            l = QLabel(lead)
-            l.setObjectName("akLead")
-            l.setWordWrap(True)
-            l.setMaximumWidth(560)
+            # AkFlowLabel fixes 2nd-line clipping that looked like “dots” in SS
+            l = AkFlowLabel(lead, object_name="akLead", max_width=LEAD_W)
             l.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-            hv.addWidget(l, 0, Qt.AlignmentFlag.AlignLeft)
-        root.addWidget(hero, 0, Qt.AlignmentFlag.AlignLeft)
+            hv.addWidget(l)
+        root.addWidget(hero)
 
         self._body = QVBoxLayout()
-        self._body.setSpacing(SPACE[8])
-        self._body.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self._body.setSpacing(SPACE[10])
+        self._body.setAlignment(Qt.AlignmentFlag.AlignTop)
         root.addLayout(self._body)
         root.addStretch(1)
 
-        # Stretch 1 + AlignLeft: fills up to max-width, excess stays on the right
-        row.addWidget(
-            inner, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-        )
+        # stretch=1 expands to MAX_W; remaining window width stays empty on the right
+        row.addWidget(inner, 1, Qt.AlignmentFlag.AlignTop)
         outer.addLayout(row, 1)
 
     def add(self, widget: QWidget) -> None:
-        self._body.addWidget(widget, 0, Qt.AlignmentFlag.AlignLeft)
+        # Expand horizontally to the content measure (MAX_W column)
+        sp = widget.sizePolicy()
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, sp.verticalPolicy())
+        # Full content width — do not AlignLeft (that clamps to sizeHint)
+        self._body.addWidget(widget)
 
 
 class MainWindow(QMainWindow):
@@ -226,7 +236,7 @@ class MainWindow(QMainWindow):
         lv.setSpacing(SPACE[4])
 
         brand_block = QVBoxLayout()
-        brand_block.setSpacing(4)
+        brand_block.setSpacing(SPACE[1])
         brand = QLabel("Akana")
         brand.setObjectName("akBrand")
         brand_block.addWidget(brand)
@@ -270,10 +280,10 @@ class MainWindow(QMainWindow):
         cv.addWidget(self.stack, 1)
 
         grip_row = QHBoxLayout()
-        grip_row.setContentsMargins(0, 0, 4, 4)
+        grip_row.setContentsMargins(0, 0, SPACE[1], SPACE[1])
         grip_row.addStretch(1)
         grip = QSizeGrip(content)
-        grip.setFixedSize(16, 16)
+        grip.setFixedSize(SIZE_GRIP, SIZE_GRIP)
         grip_row.addWidget(grip)
         cv.addLayout(grip_row)
 
@@ -478,8 +488,11 @@ class MainWindow(QMainWindow):
             "Same inventory as web gallery. Jump to the live demo page.",
         )
         grid = QGridLayout()
+        grid.setContentsMargins(0, 0, 0, 0)
         grid.setHorizontalSpacing(SPACE[4])
         grid.setVerticalSpacing(SPACE[4])
+        grid.setColumnStretch(0, 1)
+        grid.setColumnStretch(1, 1)
         catalog = [
             ("Buttons", "Actions, variants, sizes", "Buttons"),
             ("Forms", "Fields, choices, switches", "Forms"),
@@ -493,6 +506,7 @@ class MainWindow(QMainWindow):
             card.activated.connect(lambda t=target: self.go_page(t))
             grid.addWidget(card, i // 2, i % 2)
         wrap = QWidget()
+        wrap.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         wrap.setLayout(grid)
         cat.add_widget(wrap)
         page.add(cat)
@@ -506,9 +520,10 @@ class MainWindow(QMainWindow):
         toolbar = QFrame()
         toolbar.setObjectName("akToolbar")
         toolbar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        toolbar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         tv = QVBoxLayout(toolbar)
         tv.setContentsMargins(SPACE[5], SPACE[4], SPACE[5], SPACE[4])
-        tv.setSpacing(SPACE[3])
+        tv.setSpacing(SPACE[4])
         head = QHBoxLayout()
         ht = QLabel("Library")
         ht.setObjectName("akPanelTitle")
@@ -520,12 +535,22 @@ class MainWindow(QMainWindow):
         tv.addLayout(head)
         row = QHBoxLayout()
         row.setSpacing(SPACE[3])
-        row.addWidget(AkBadge("Draft"))
-        row.addWidget(AkBadge("Mono", variant="solid"))
-        row.addWidget(AkInput("Search components…"), 1)
-        row.addWidget(AkSelect(["All", "Core", "Form", "Feedback"]))
-        row.addWidget(AkButton("Filter", variant="secondary", size="sm"))
-        row.addWidget(AkButton("New", size="sm"))
+        row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(AkBadge("Draft"), 0, Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(AkBadge("Mono", variant="solid"), 0, Qt.AlignmentFlag.AlignVCenter)
+        # Match control height (md) so the strip does not mix 48px fields with 36px chips
+        row.addWidget(AkInput("Search components…"), 1, Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(
+            AkSelect(["All", "Core", "Form", "Feedback"]),
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        row.addWidget(
+            AkButton("Filter", variant="secondary", size="md"),
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        row.addWidget(AkButton("New", size="md"), 0, Qt.AlignmentFlag.AlignVCenter)
         tv.addLayout(row)
         sec.add_widget(toolbar)
         page.add(sec)
@@ -537,7 +562,7 @@ class MainWindow(QMainWindow):
             "02 · Tokens",
             "Three layers. One ink ramp.",
             "Primitive grays never appear in components. Semantic tokens rebind "
-            "for dark mode. Layout uses SPACE, FS, RADIUS, CONTROL_H.",
+            "for dark mode. Layout uses SPACE, FS, RADIUS, CONTROL_H, FOCUS_W.",
         )
 
         # Semantic swatches for active theme
@@ -578,10 +603,11 @@ class MainWindow(QMainWindow):
             cell.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
             sw = QFrame()
             sw.setObjectName("akSwatch")
-            sw.setFixedSize(48, 48)
+            sw.setFixedSize(SPACE[12], SPACE[12])
             sw.setStyleSheet(
                 f"QFrame#akSwatch {{ background-color: {GRAY_PRIMITIVES[key]}; "
-                f"border: 1px solid {get_theme()['border']}; border-radius: 8px; }}"
+                f"border: 1px solid {get_theme()['border']}; "
+                f"border-radius: {RADIUS.md}px; }}"
             )
             cell.addWidget(sw, 0, Qt.AlignmentFlag.AlignLeft)
             n = QLabel(key.replace("gray-", ""))
@@ -601,16 +627,17 @@ class MainWindow(QMainWindow):
         ref = AkStyleBoard(columns=2)
         type_p = AkPanel()
         type_p.add_header("Type scale", "DESKTOP PX")
-        for name, px in (
-            ("2xs · label", 11),
-            ("xs", 12),
-            ("sm · control", 14),
-            ("md · body", 16),
-            ("lg · lead", 18),
-            ("xl", 22),
-            ("2xl · section", 28),
-            ("3xl · page", 36),
+        for name, key in (
+            ("2xs · label", "2xs"),
+            ("xs", "xs"),
+            ("sm · control", "sm"),
+            ("md · body", "md"),
+            ("lg · lead", "lg"),
+            ("xl", "xl"),
+            ("2xl · section", "2xl"),
+            ("3xl · page", "3xl"),
         ):
+            px = FS[key]
             lab = QLabel(f"{name}  ·  {px}px")
             lab.setObjectName("akMuted")
             f = lab.font()
@@ -621,16 +648,18 @@ class MainWindow(QMainWindow):
 
         space_p = AkPanel(tone="surface")
         space_p.add_header("Spacing", "4PX BASE")
-        for k, v in ((1, 4), (2, 8), (3, 12), (4, 16), (5, 20), (6, 24), (8, 32), (12, 48)):
+        for k in (1, 2, 3, 4, 5, 6, 8, 12):
+            v = SPACE[k]
             row = QHBoxLayout()
             cap = QLabel(f"space-{k}")
             cap.setObjectName("akMonoMeta")
             row.addWidget(cap)
             bar = QFrame()
-            bar.setFixedHeight(8)
+            bar.setFixedHeight(SPACE[2])
             bar.setFixedWidth(v)
             bar.setStyleSheet(
-                f"background: {get_theme()['ink']}; border: none; border-radius: 2px;"
+                f"background: {get_theme()['ink']}; border: none; "
+                f"border-radius: {RADIUS.sm // 2}px;"
             )
             row.addWidget(bar)
             row.addWidget(QLabel(f"{v}px"))
@@ -732,7 +761,10 @@ class MainWindow(QMainWindow):
 
         inv = AkPanel(tone="ink")
         inv.add_header("On ink", "INVERSE")
-        inv.add_widget(QLabel("Use inverse fill when the host surface is ink."))
+        inv_copy = QLabel("Use inverse fill when the host surface is ink.")
+        inv_copy.setObjectName("akMuted")
+        inv_copy.setWordWrap(True)
+        inv.add_widget(inv_copy)
         inv.add_row(
             AkButton("Continue", variant="inverse", size="sm"),
             AkButton("Skip", variant="ghost", size="sm"),
@@ -918,7 +950,7 @@ class MainWindow(QMainWindow):
                 ["Katherine Johnson", "Mathematician", "Active"],
             ],
         )
-        table.setMinimumHeight(260)
+        table.setMinimumHeight(280)
         table_panel.add_widget(table)
         page.add(table_panel)
 
@@ -979,7 +1011,7 @@ class MainWindow(QMainWindow):
         table.set_cell_widget(0, 1, _badge_cell("Active"))
         table.set_cell_widget(1, 1, _badge_cell("Live", solid=True))
         table.set_cell_widget(2, 1, _badge_cell("Paused"))
-        table.setMinimumHeight(200)
+        table.setMinimumHeight(220)
         list_p.add_widget(table)
         list_p.add_widget(AkPagination(total_pages=3, current=1))
         page.add(list_p)
@@ -1034,6 +1066,7 @@ class MainWindow(QMainWindow):
         es.add_action(start_btn)
         es.add_action(modal_btn)
         empty_p.add_widget(es)
+        # Full-width empty block so CTA stays above the scroll bottom
         page.add(empty_p)
         return page
 

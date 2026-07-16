@@ -117,10 +117,10 @@ class AkModal(QDialog):
     def _apply_shadow(self) -> None:
         if self._card is None:
             return
-        theme = get_theme()
-        ink = theme.get("ink", "#0a0a0a").lower()
-        is_light_theme_ink = ink in ("#0a0a0a", "#000000")
-        alpha = 70 if is_light_theme_ink else 120
+        from akana.theme import current_name
+
+        # Dark theme needs a stronger drop so the card separates from surface
+        alpha = 70 if current_name() == "light" else 120
         shadow = QGraphicsDropShadowEffect(self._card)
         shadow.setBlurRadius(28)
         shadow.setColor(QColor(0, 0, 0, alpha))

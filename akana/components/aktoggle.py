@@ -11,7 +11,7 @@ from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from akana.theme import get_theme
-from akana.tokens import SPACE, TOGGLE_H, TOGGLE_THUMB, TOGGLE_W
+from akana.tokens import FOCUS_W, SPACE, TOGGLE_H, TOGGLE_THUMB, TOGGLE_W
 from akana.util import hand_cursor
 
 
@@ -103,11 +103,17 @@ class AkToggle(QWidget):
         # Focus ring (ink, monochrome)
         if self.hasFocus():
             p.setBrush(Qt.BrushStyle.NoBrush)
-            p.setPen(QPen(QColor(t["ink"]), 2.0))
+            p.setPen(QPen(QColor(t["ink"]), float(FOCUS_W)))
+            inset = FOCUS_W / 2 + 0.5
             p.drawRoundedRect(
-                QRectF(1.5, 1.5, self.TRACK_W - 3, self.TRACK_H - 3),
-                (self.TRACK_H - 3) / 2,
-                (self.TRACK_H - 3) / 2,
+                QRectF(
+                    inset,
+                    inset,
+                    self.TRACK_W - 2 * inset,
+                    self.TRACK_H - 2 * inset,
+                ),
+                (self.TRACK_H - 2 * inset) / 2,
+                (self.TRACK_H - 2 * inset) / 2,
             )
 
         p.end()

@@ -72,7 +72,9 @@ Storage: `QSettings("Akana", "AkanaQt")` key `theme` (web mirror of
   `style.unpolish` / `polish` after changes.
 - Intermediate `QWidget` backgrounds stay **transparent** so nested panels
   do not paint double chrome.
-- Prefer `CONTROL_H` (44) for inputs/selects to match web.
+- Prefer `CONTROL_H` (48 desktop; web is 44) for inputs/selects.
+- Use `FOCUS_W` (2) for focus rings so geometry never jumps.
+- Layout numbers come from `SPACE` / `FS` / control tokens — not bare literals.
 
 ## Verification
 

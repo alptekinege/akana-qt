@@ -1,6 +1,6 @@
 """Akana Qt — monochrome text input.
 
-Mirrors web `.ak-input`: border-strong, ink focus ring, 44px control height.
+Mirrors web `.ak-input`: border-strong, ink focus ring, CONTROL_H height.
 """
 
 from __future__ import annotations

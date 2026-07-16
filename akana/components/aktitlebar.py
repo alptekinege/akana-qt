@@ -7,7 +7,7 @@ from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QWidget
 
 from akana.icons import glyph
-from akana.tokens import SPACE, TITLEBAR_H
+from akana.tokens import SPACE, TITLE_BTN_H, TITLE_BTN_W, TITLEBAR_H
 from akana.util import hand_cursor, set_dyn
 
 
@@ -16,7 +16,7 @@ class AkTitleBarButton(QPushButton):
         super().__init__(text, parent)
         self.setObjectName("akTitleBtn")
         set_dyn(self, "role", role)
-        self.setFixedSize(44, 36)
+        self.setFixedSize(TITLE_BTN_W, TITLE_BTN_H)
         hand_cursor(self)
         self.setFlat(True)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)

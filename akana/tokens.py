@@ -2,6 +2,9 @@
 
 Mirrors web Akana `assets/tokens.css` Layer 1 (v0.5).
 Components must never use GRAY_PRIMITIVES directly; use theme semantics.
+
+Desktop control geometry is intentionally slightly larger than web CSS
+hit targets so Qt chrome stays comfortable on mouse + touch.
 """
 
 from __future__ import annotations
@@ -32,14 +35,16 @@ GRAY_PRIMITIVES: dict[str, str] = {
 
 @dataclass(frozen=True)
 class TypographyTokens:
-    """Desktop (px) targets from web type scale maxima."""
+    """Desktop (px) targets from web type scale maxima, stepped up one notch
+    for Qt legibility at the smaller end of the scale.
+    """
 
     family_display: str = '"IBM Plex Sans", system-ui, sans-serif'
     family_ui: str = '"IBM Plex Sans", system-ui, sans-serif'
     family_mono: str = '"IBM Plex Mono", ui-monospace, monospace'
-    # 2xs, xs, sm, md, lg, xl, 2xl, 3xl, 4xl  (desktop px)
+    # 2xs, xs, sm, md, lg, xl, 2xl, 3xl, 4xl — mirrors FS values
     scale: tuple[int, ...] = field(
-        default_factory=lambda: (11, 12, 14, 16, 18, 22, 28, 36, 48)
+        default_factory=lambda: (12, 13, 15, 16, 18, 22, 28, 36, 48)
     )
     lh_tight: float = 1.12
     lh_snug: float = 1.3
@@ -102,9 +107,9 @@ SPACE = {
 # Desktop Qt reads slightly smaller than browser CSS at the same px;
 # UI control type steps up one notch vs web for comfort.
 FS = {
-    "2xs": 12,   # mono meta / badges (was 11)
-    "xs": 13,    # compact UI (was 12)
-    "sm": 15,    # controls / buttons (was 14)
+    "2xs": 12,   # mono meta / badges (web 11)
+    "xs": 13,    # compact UI (web 12)
+    "sm": 15,    # controls / buttons (web 14)
     "md": 16,    # body
     "lg": 18,    # lead / card title
     "xl": 22,
@@ -114,7 +119,10 @@ FS = {
 }
 
 BORDER_W = 1
+FOCUS_W = 2  # fixed focus ring width — never jumps layout
 MAX_W = 1080
+LEAD_W = 560  # ~60ch at lead size; gallery / section lead measure
+EMPTY_BODY_W = 360
 
 # ---- Control geometry (desktop hit targets; ≥ web where noted) ----
 CONTROL_H = 48          # input / select resting height (web 44)
@@ -124,7 +132,11 @@ BUTTON_H_SM = 36
 BUTTON_H_LG = 52
 PAGE_BTN = 40           # pagination square (web 36)
 NAV_ITEM_H = 44
+NAV_STRIP_H = 40        # segmented strip items (slightly tighter than rail)
+TAB_H = 44
 TITLEBAR_H = 48
+TITLE_BTN_W = 44
+TITLE_BTN_H = 36
 CHECK_BOX = 20          # checkbox side (web 18)
 RADIO_BOX = 18          # radio outer (web 16)
 TOGGLE_W = 44
@@ -134,3 +146,6 @@ BADGE_H = 28
 EMPTY_ICON = 52
 CARD_ICON = 40
 MODAL_W = 480
+TEXTAREA_MIN_H = 140    # web ~120; roomier desktop multiline
+SCROLL_W = 10
+SIZE_GRIP = 16

@@ -1,6 +1,6 @@
 """Akana Qt — monochrome radio with painted indicator.
 
-Mirrors web `.ak-choice--radio`: 16px circle, checked = 5px ink ring.
+Mirrors web `.ak-choice--radio`: RADIO_BOX circle, checked = thick ink ring.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import QButtonGroup, QRadioButton, QVBoxLayout, QWidget
 
 from akana.theme import get_theme
-from akana.tokens import RADIO_BOX, SPACE
+from akana.tokens import FOCUS_W, RADIO_BOX, SPACE
 from akana.util import hand_cursor
 
 
@@ -51,10 +51,11 @@ class AkRadio(QRadioButton):
 
         if self.hasFocus():
             p.setBrush(Qt.BrushStyle.NoBrush)
-            p.setPen(QPen(QColor(t["ink"]), 2.0))
-            p.drawEllipse(box.adjusted(-3, -3, 3, 3))
+            p.setPen(QPen(QColor(t["ink"]), float(FOCUS_W)))
+            pad = FOCUS_W + 1
+            p.drawEllipse(box.adjusted(-pad, -pad, pad, pad))
 
-        text_x = self.BOX + 14
+        text_x = self.BOX + SPACE[3] + 2
         text_rect = self.rect().adjusted(text_x, 0, 0, 0)
         p.setPen(QColor(t["text"] if enabled else t["text_muted"]))
         p.setFont(self.font())
@@ -66,10 +67,13 @@ class AkRadio(QRadioButton):
         p.end()
 
     def sizeHint(self):  # noqa: N802
+        from akana.tokens import FOCUS_W, SPACE
+
         sh = super().sizeHint()
         fm = self.fontMetrics()
-        w = self.BOX + 14 + fm.horizontalAdvance(self.text()) + 8
-        h = max(self.BOX + 8, fm.height() + 8)
+        gap = SPACE[3] + 2
+        w = self.BOX + gap + fm.horizontalAdvance(self.text()) + SPACE[2]
+        h = max(self.BOX + 2 * FOCUS_W + SPACE[2], fm.height() + SPACE[2])
         sh.setWidth(w)
         sh.setHeight(h)
         return sh

@@ -1,6 +1,7 @@
 """Akana Qt — monochrome accordion / disclosure.
 
 Web layout: full-width trigger with title left, chevron right; panel below.
+Collapsed items keep a stable min-height so divider lines never stack tight.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -31,6 +33,7 @@ class AkAccordionItem(QFrame):
     ) -> None:
         super().__init__(parent)
         self.setObjectName("akAccordionItem")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self._title_text = title
 
         root = QVBoxLayout(self)
@@ -43,9 +46,13 @@ class AkAccordionItem(QFrame):
         self._trigger.setCheckable(True)
         self._trigger.setChecked(expanded)
         self._trigger.setFlat(True)
+        self._trigger.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        # Stable row height when collapsed (prevents divider compression)
+        self._trigger.setMinimumHeight(SPACE[12])
         self._trigger.clicked.connect(self._on_toggle)
 
-        # Custom content for left/right layout (QPushButton text alone can't do this well)
         row = QHBoxLayout(self._trigger)
         row.setContentsMargins(SPACE[5], SPACE[4], SPACE[5], SPACE[4])
         row.setSpacing(SPACE[3])
@@ -53,6 +60,7 @@ class AkAccordionItem(QFrame):
         self._title_lbl = QLabel(title)
         self._title_lbl.setObjectName("akAccordionTitle")
         self._title_lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self._title_lbl.setWordWrap(True)
         row.addWidget(self._title_lbl, 1)
 
         self._chev = QLabel(glyph("chevron-down"))
@@ -67,6 +75,9 @@ class AkAccordionItem(QFrame):
         self._panel = QLabel(body)
         self._panel.setObjectName("akAccordionPanel")
         self._panel.setWordWrap(True)
+        self._panel.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
+        )
         self._panel.setVisible(expanded)
         root.addWidget(self._panel)
 
@@ -96,6 +107,7 @@ class AkAccordion(QFrame):
         super().__init__(parent)
         self.setObjectName("AkAccordion")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self._items: list[AkAccordionItem] = []
         self._root = QVBoxLayout(self)
         self._root.setContentsMargins(0, 0, 0, 0)

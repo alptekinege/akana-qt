@@ -5,8 +5,9 @@ Port of web Akana (https://github.com/alptekinege/Akana) v0.5:
 """
 
 from akana import fonts, icons, styles, theme, tokens, util, winchrome
+from akana.util import AkFlowLabel, configure_flow_label
 
-__version__ = "0.5.3"
+__version__ = "0.5.4"
 
 __all__ = [
     "tokens",
@@ -16,5 +17,7 @@ __all__ = [
     "icons",
     "util",
     "winchrome",
+    "AkFlowLabel",
+    "configure_flow_label",
     "__version__",
 ]

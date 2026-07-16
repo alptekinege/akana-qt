@@ -9,11 +9,18 @@ from __future__ import annotations
 from typing import Literal
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from akana.icons import glyph
 from akana.tokens import EMPTY_ICON, SPACE
-from akana.util import set_dyn
+from akana.util import AkFlowLabel, set_dyn
 
 Align = Literal["start", "center"]
 
@@ -31,11 +38,14 @@ class AkEmptyState(QFrame):
         super().__init__(parent)
         self.setObjectName("AkEmptyState")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        # Full width of parent; height from content (CTA never clipped)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self._align: Align = align
         self._root = QVBoxLayout(self)
-        self._root.setContentsMargins(SPACE[8], SPACE[8], SPACE[8], SPACE[8])
+        self._root.setContentsMargins(SPACE[6], SPACE[6], SPACE[6], SPACE[6])
         self._root.setSpacing(SPACE[2])
+        self._root.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self._icon = QLabel(icon if icon is not None else glyph("empty"))
         self._icon.setObjectName("akEmptyIcon")
@@ -45,23 +55,22 @@ class AkEmptyState(QFrame):
         self._root.addWidget(self._icon)
         self._root.addSpacing(SPACE[3])
 
-        self._title = QLabel(title)
-        self._title.setObjectName("akEmptyTitle")
-        self._title.setWordWrap(True)
+        self._title = AkFlowLabel(title, object_name="akEmptyTitle")
         self._root.addWidget(self._title)
 
-        self._body = QLabel(body)
-        self._body.setObjectName("akEmptyBody")
-        self._body.setWordWrap(True)
-        self._body.setMaximumWidth(360)
+        # Full width of empty card (no narrow max) so copy doesn’t clip mid-sentence
+        self._body = AkFlowLabel(body, object_name="akEmptyBody")
         self._body.setVisible(bool(body))
         self._root.addWidget(self._body)
 
         self._actions_host = QWidget()
+        self._actions_host.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         self._actions = QHBoxLayout(self._actions_host)
-        self._actions.setContentsMargins(0, 0, 0, 0)
+        self._actions.setContentsMargins(0, SPACE[2], 0, 0)
         self._actions.setSpacing(SPACE[3])
-        self._root.addSpacing(SPACE[4])
+        self._root.addSpacing(SPACE[3])
         self._root.addWidget(self._actions_host)
 
         self.set_align(align)
@@ -72,12 +81,16 @@ class AkEmptyState(QFrame):
         if align == "center":
             ha = Qt.AlignmentFlag.AlignHCenter
             ta = Qt.AlignmentFlag.AlignCenter
-            self._root.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+            self._root.setAlignment(
+                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
+            )
             self._actions.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         else:
             ha = Qt.AlignmentFlag.AlignLeft
-            ta = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-            self._root.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+            ta = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            self._root.setAlignment(
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            )
             self._actions.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self._root.setAlignment(self._icon, ha)
@@ -88,7 +101,6 @@ class AkEmptyState(QFrame):
         self._body.setAlignment(ta)
 
     def add_action(self, widget: QWidget) -> None:
-        # Insert before trailing stretch if present
         stretch_at = -1
         for i in range(self._actions.count()):
             item = self._actions.itemAt(i)

@@ -7,11 +7,18 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from akana.icons import glyph
 from akana.tokens import SPACE
-from akana.util import hand_cursor
+from akana.util import AkFlowLabel, hand_cursor
 
 
 class AkLinkCard(QFrame):
@@ -27,22 +34,21 @@ class AkLinkCard(QFrame):
         self.setObjectName("AkLinkCard")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         hand_cursor(self)
 
         root = QHBoxLayout(self)
-        root.setContentsMargins(SPACE[6], SPACE[5], SPACE[6], SPACE[5])
+        root.setContentsMargins(SPACE[5], SPACE[4], SPACE[5], SPACE[4])
         root.setSpacing(SPACE[4])
 
         col = QVBoxLayout()
-        col.setSpacing(SPACE[1])
-        self._name = QLabel(name)
-        self._name.setObjectName("akLinkName")
-        self._name.setWordWrap(True)
+        col.setSpacing(SPACE[2])
+        col.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        self._name = AkFlowLabel(name, object_name="akLinkName")
         col.addWidget(self._name)
 
-        self._desc = QLabel(description)
-        self._desc.setObjectName("akLinkDesc")
-        self._desc.setWordWrap(True)
+        self._desc = AkFlowLabel(description, object_name="akLinkDesc")
         self._desc.setVisible(bool(description))
         col.addWidget(self._desc)
         root.addLayout(col, 1)

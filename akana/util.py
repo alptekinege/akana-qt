@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtGui import QFontMetrics, QResizeEvent
+from PyQt6.QtWidgets import QLabel, QSizePolicy, QWidget
 
 
 def repolish(widget: QWidget) -> None:
@@ -38,3 +39,85 @@ def clear_layout(layout) -> None:
 
 def hand_cursor(widget: QWidget) -> None:
     widget.setCursor(Qt.CursorShape.PointingHandCursor)
+
+
+def configure_flow_label(
+    label: QLabel,
+    *,
+    max_width: int | None = None,
+) -> QLabel:
+    """Make a QLabel wrap and report full multi-line height to layouts.
+
+    Qt + QSS often under-allocates height for word-wrapped labels (especially
+    with max-width / padding), which clips the 2nd line into a “dotted” strip.
+    """
+    label.setWordWrap(True)
+    label.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+    label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+    if max_width is not None:
+        label.setMaximumWidth(max_width)
+    # Prefer layout spacing over QSS padding (padding is ignored by heightForWidth)
+    label.setContentsMargins(0, 0, 0, 0)
+    return label
+
+
+class AkFlowLabel(QLabel):
+    """Word-wrapped label with reliable height-for-width (page leads, empty copy)."""
+
+    def __init__(
+        self,
+        text: str = "",
+        *,
+        object_name: str = "",
+        max_width: int | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(text, parent)
+        if object_name:
+            self.setObjectName(object_name)
+        configure_flow_label(self, max_width=max_width)
+        self._max_w = max_width
+
+    def hasHeightForWidth(self) -> bool:  # noqa: N802
+        return True
+
+    def heightForWidth(self, width: int) -> int:  # noqa: N802
+        w = max(1, width)
+        if self._max_w is not None:
+            w = min(w, self._max_w)
+        # Use bounding rect — more accurate than sizeHint for multi-line
+        fm = QFontMetrics(self.font())
+        m = self.contentsMargins()
+        inner = max(1, w - m.left() - m.right())
+        flags = int(Qt.TextFlag.TextWordWrap | Qt.AlignmentFlag.AlignLeft)
+        br = fm.boundingRect(0, 0, inner, 10_000, flags, self.text())
+        # +2px slack for antialiasing / descent
+        return br.height() + m.top() + m.bottom() + 2
+
+    def sizeHint(self) -> QSize:  # noqa: N802
+        w = self._max_w or super().sizeHint().width()
+        if self.width() > 0:
+            w = self.width()
+        elif self._max_w is not None:
+            w = self._max_w
+        else:
+            w = max(w, 200)
+        return QSize(w, self.heightForWidth(w))
+
+    def minimumSizeHint(self) -> QSize:  # noqa: N802
+        sh = self.sizeHint()
+        return QSize(40, sh.height())
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        super().resizeEvent(event)
+        # Lock min height to full wrapped measure so layouts cannot clip lines
+        h = self.heightForWidth(self.width())
+        if self.minimumHeight() != h:
+            self.setMinimumHeight(h)
+
+    def setText(self, text: str) -> None:  # noqa: N802
+        super().setText(text)
+        if self.width() > 0:
+            self.setMinimumHeight(self.heightForWidth(self.width()))
+        else:
+            self.updateGeometry()
