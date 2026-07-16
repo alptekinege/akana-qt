@@ -1,4 +1,4 @@
-"""Akana Qt — polished frameless gallery with multi-style showcases."""
+"""Akana Qt — design-system gallery (web index + patterns parity)."""
 
 from __future__ import annotations
 
@@ -9,17 +9,19 @@ from PyQt6.QtGui import QFont, QMouseEvent
 from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QMainWindow,
     QScrollArea,
     QSizeGrip,
+    QSizePolicy,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
 
-from akana import fonts, styles, winchrome
+from akana import __version__, fonts, styles, winchrome
 from akana.components import (
     AkAccordion,
     AkAlert,
@@ -29,9 +31,12 @@ from akana.components import (
     AkCard,
     AkCheckbox,
     AkEmptyState,
+    AkField,
     AkInput,
+    AkLinkCard,
     AkModal,
     AkNavRail,
+    AkNavStrip,
     AkPagination,
     AkRadioGroup,
     AkSelect,
@@ -42,12 +47,30 @@ from akana.components import (
     AkToggleSwitch,
 )
 from akana.components.akshowcase import AkPanel, AkShowcaseSection, AkStyleBoard
-from akana.theme import current_name, set_theme
-from akana.tokens import SPACE
+from akana.theme import current_name, get_theme, load_saved_theme, set_theme
+from akana.tokens import (
+    FS,
+    GRAY_PRIMITIVES,
+    LEAD_W,
+    MAX_W,
+    RADIUS,
+    SIZE_GRIP,
+    SPACE,
+)
+from akana.util import AkFlowLabel
 
-
-# Edge hit margin for frameless resize (non-Windows fallback)
 _EDGE = 6
+
+# Sidebar order — link cards jump here
+PAGE_INDEX = {
+    "Overview": 0,
+    "Tokens": 1,
+    "Buttons": 2,
+    "Forms": 3,
+    "Feedback": 4,
+    "Data": 5,
+    "Patterns": 6,
+}
 
 
 def _scroll(page: QWidget) -> QScrollArea:
@@ -81,7 +104,20 @@ def _stack(*widgets: QWidget, spacing: int | None = None) -> QWidget:
     return wrap
 
 
+def _pattern_title(text: str) -> QLabel:
+    lab = QLabel(text)
+    lab.setObjectName("akPatternTitle")
+    return lab
+
+
 class Page(QWidget):
+    """Gallery page: left-weighted column, max measure, free space on the right.
+
+    Not a centered marketing column — content starts under the sidebar edge
+    and stops at MAX_W. Children expand horizontally so tables/panels fill
+    the content measure (AlignLeft-only was squeezing them to sizeHint).
+    """
+
     def __init__(
         self,
         eyebrow: str,
@@ -90,35 +126,64 @@ class Page(QWidget):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        root = QVBoxLayout(self)
-        root.setContentsMargins(SPACE[8], SPACE[6], SPACE[8], SPACE[10])
-        root.setSpacing(SPACE[8])
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # Horizontal: content left · slack right (never dual-stretch center)
+        row = QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(0)
+        row.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        inner = QFrame()
+        inner.setObjectName("akContentInner")
+        inner.setMaximumWidth(MAX_W)
+        # Preferred height grows with content (scroll area needs accurate height)
+        inner.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        root = QVBoxLayout(inner)
+        # Top pad leaves room for bordered preview cards at the scroll edge
+        root.setContentsMargins(SPACE[8], SPACE[8], SPACE[8], SPACE[16])
+        root.setSpacing(SPACE[10])
+        root.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         hero = QFrame()
         hero.setObjectName("akPageHero")
+        hero.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         hv = QVBoxLayout(hero)
-        hv.setContentsMargins(0, 0, 0, SPACE[5])
-        hv.setSpacing(SPACE[2])
+        hv.setContentsMargins(0, 0, 0, SPACE[6])
+        hv.setSpacing(SPACE[3])
+        hv.setAlignment(Qt.AlignmentFlag.AlignTop)
         eye = QLabel(eyebrow)
         eye.setObjectName("akLabel")
         hv.addWidget(eye)
-        t = QLabel(title)
-        t.setObjectName("akTitle")
-        t.setWordWrap(True)
+        t = AkFlowLabel(title, object_name="akTitle")
+        t.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         hv.addWidget(t)
         if lead:
-            l = QLabel(lead)
-            l.setObjectName("akLead")
-            l.setWordWrap(True)
+            # AkFlowLabel fixes 2nd-line clipping that looked like “dots” in SS
+            l = AkFlowLabel(lead, object_name="akLead", max_width=LEAD_W)
+            l.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
             hv.addWidget(l)
         root.addWidget(hero)
 
         self._body = QVBoxLayout()
-        self._body.setSpacing(SPACE[8])
+        self._body.setSpacing(SPACE[10])
+        self._body.setAlignment(Qt.AlignmentFlag.AlignTop)
         root.addLayout(self._body)
         root.addStretch(1)
 
+        # stretch=1 expands to MAX_W; remaining window width stays empty on the right
+        row.addWidget(inner, 1, Qt.AlignmentFlag.AlignTop)
+        outer.addLayout(row, 1)
+
     def add(self, widget: QWidget) -> None:
+        # Expand horizontally to the content measure (MAX_W column)
+        sp = widget.sizePolicy()
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, sp.verticalPolicy())
+        # Full content width — do not AlignLeft (that clamps to sizeHint)
         self._body.addWidget(widget)
 
 
@@ -126,21 +191,16 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Akana Qt")
-        self.resize(1240, 820)
-        self.setMinimumSize(920, 600)
-        # Frameless UI; on Windows we restore thick-frame via winchrome so
-        # Win+Up / snap / maximize keep working.
+        self.resize(1280, 860)
+        self.setMinimumSize(960, 620)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window
         )
         self._resize_edge: str | None = None
         self._resize_origin = QPoint()
         self._resize_geom = QRect()
-        # Windows snap styles applied after show; no nativeEvent hooks
-        # (PyQt6 super().nativeEvent returns (False, None) → CreateWindowEx fails).
         self._snap_enabled = False
 
-        # Outer border chrome
         self.shell = QFrame()
         self.shell.setObjectName("akWindowRoot")
         self.shell.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -149,21 +209,20 @@ class MainWindow(QMainWindow):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        # ---- Title bar ----
         self.titlebar = AkTitleBar("Akana Qt")
         self.titlebar.set_window(self)
-        self.titlebar.set_meta("v0.3 · monochrome")
+        self.titlebar.set_meta(self._meta_label())
         self.titlebar.minimizeClicked.connect(self.showMinimized)
         self.titlebar.maximizeClicked.connect(self._toggle_max)
         self.titlebar.closeClicked.connect(self.close)
 
-        self.theme_chip = AkButton("Dark", variant="ghost", size="sm")
-        self.theme_chip.setFixedHeight(28)
+        self.theme_chip = AkButton(
+            self._theme_chip_label(), variant="secondary", size="sm"
+        )
         self.theme_chip.clicked.connect(self._toggle_theme)
         self.titlebar.add_action(self.theme_chip)
         outer.addWidget(self.titlebar)
 
-        # ---- Body: sidebar + content ----
         body = QHBoxLayout()
         body.setContentsMargins(0, 0, 0, 0)
         body.setSpacing(0)
@@ -171,13 +230,13 @@ class MainWindow(QMainWindow):
         left = QFrame()
         left.setObjectName("akSidebar")
         left.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        left.setFixedWidth(240)
+        left.setFixedWidth(260)
         lv = QVBoxLayout(left)
         lv.setContentsMargins(SPACE[4], SPACE[5], SPACE[4], SPACE[4])
         lv.setSpacing(SPACE[4])
 
         brand_block = QVBoxLayout()
-        brand_block.setSpacing(4)
+        brand_block.setSpacing(SPACE[1])
         brand = QLabel("Akana")
         brand.setObjectName("akBrand")
         brand_block.addWidget(brand)
@@ -196,23 +255,18 @@ class MainWindow(QMainWindow):
         lv.addWidget(nav_label)
 
         self.nav = AkNavRail()
-        for name in (
-            "Overview",
-            "Buttons",
-            "Forms",
-            "Feedback",
-            "Data",
-            "Patterns",
-        ):
+        self._page_names = list(PAGE_INDEX.keys())
+        for name in self._page_names:
             self.nav.add_item(name)
         self.nav.currentChanged.connect(self._on_nav)
         lv.addWidget(self.nav, 1)
 
-        foot = QLabel("IBM Plex · offline\nNo accent · no CDN")
+        foot = QLabel(
+            f"IBM Plex · offline\nNo accent · no CDN\nv{__version__} · web parity"
+        )
         foot.setObjectName("akMuted")
         foot.setWordWrap(True)
         lv.addWidget(foot)
-
         body.addWidget(left, 0)
 
         content = QFrame()
@@ -225,20 +279,19 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         cv.addWidget(self.stack, 1)
 
-        # Size grip (native resize also works on Windows via NCHITTEST)
         grip_row = QHBoxLayout()
-        grip_row.setContentsMargins(0, 0, 4, 4)
+        grip_row.setContentsMargins(0, 0, SPACE[1], SPACE[1])
         grip_row.addStretch(1)
         grip = QSizeGrip(content)
-        grip.setFixedSize(16, 16)
+        grip.setFixedSize(SIZE_GRIP, SIZE_GRIP)
         grip_row.addWidget(grip)
         cv.addLayout(grip_row)
 
         body.addWidget(content, 1)
         outer.addLayout(body, 1)
 
-        # Pages
         self.stack.addWidget(_scroll(self._page_overview()))
+        self.stack.addWidget(_scroll(self._page_tokens()))
         self.stack.addWidget(_scroll(self._page_buttons()))
         self.stack.addWidget(_scroll(self._page_forms()))
         self.stack.addWidget(_scroll(self._page_feedback()))
@@ -249,12 +302,21 @@ class MainWindow(QMainWindow):
         self.nav.set_current_index(0)
         self._sync_window_chrome()
 
-    # ---- window chrome ----
+    def _meta_label(self) -> str:
+        return f"v{__version__} · {current_name()}"
+
+    def _theme_chip_label(self) -> str:
+        return "Light" if current_name() == "dark" else "Dark"
+
+    def go_page(self, name: str) -> None:
+        idx = PAGE_INDEX.get(name)
+        if idx is not None:
+            self.nav.set_current_index(idx)
+
+    # ---- chrome ----
 
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)
-        # After HWND exists: add WS_MAXIMIZEBOX / thick frame so Win+Up works.
-        # Deferred — must not run during CreateWindowEx.
         if winchrome.is_windows() and not self._snap_enabled:
             QTimer.singleShot(0, self._enable_snap_styles)
 
@@ -273,11 +335,9 @@ class MainWindow(QMainWindow):
         maximized = self.isMaximized()
         self.titlebar.set_maximized(maximized)
         self.shell.setProperty("maximized", maximized)
-        style = self.shell.style()
-        if style is not None:
-            style.unpolish(self.shell)
-            style.polish(self.shell)
-        self.shell.update()
+        from akana.util import repolish
+
+        repolish(self.shell)
 
     def _toggle_max(self) -> None:
         if self.isMaximized():
@@ -289,10 +349,13 @@ class MainWindow(QMainWindow):
     def _toggle_theme(self) -> None:
         name = "dark" if current_name() == "light" else "light"
         set_theme(name)
-        self.theme_chip.setText("Light" if name == "dark" else "Dark")
-        self.titlebar.set_meta(f"v0.3 · {name}")
+        self.theme_chip.setText(self._theme_chip_label())
+        self.titlebar.set_meta(self._meta_label())
         styles.apply(self)
         self._sync_window_chrome()
+        # Rebuild token swatches if page is live — full stylesheet covers colors;
+        # re-apply swatch fill colors explicitly
+        self._refresh_swatches()
 
     def _on_nav(self, index: int) -> None:
         self.stack.setCurrentIndex(index)
@@ -385,20 +448,22 @@ class MainWindow(QMainWindow):
     def _page_overview(self) -> Page:
         page = Page(
             "01 · Overview",
-            "Clarity without decoration.",
-            "Akana is monochrome and text-first. Hierarchy comes from type "
-            "weight, spacing, and border — never hue.",
+            "Monochrome, text-first.",
+            "A clean, minimal interface system built on ink and whitespace. "
+            "No accent color, no decorative images — hierarchy comes from type, "
+            "spacing, and small glyphs. Akana = ak + ana (clarity + source). "
+            f"Qt port v{__version__}, aligned with web Akana v0.5.",
         )
 
-        # Three tone panels
+        # Principles
         board = AkStyleBoard(columns=3)
         for tone, title, body in (
-            ("default", "Default", "Page background. Primary reading surface."),
-            ("surface", "Surface", "Raised areas, rails, quiet containers."),
-            ("ink", "Ink", "Maximum emphasis. Inverse type on fill."),
+            ("default", "Ink", "The only strong tone. Headlines, primary actions, focus."),
+            ("surface", "Surface", "Quiet structure. Rails, panels, hover fills."),
+            ("ink", "Inverse", "Solid fill for maximum emphasis. Inverse type only."),
         ):
             p = AkPanel(tone=tone)  # type: ignore[arg-type]
-            p.add_header(title, tone.upper())
+            p.add_header(title, "PRINCIPLE")
             muted = QLabel(body)
             muted.setObjectName("akMuted")
             muted.setWordWrap(True)
@@ -413,56 +478,261 @@ class MainWindow(QMainWindow):
                     AkButton("Primary", size="sm"),
                     AkButton("Secondary", variant="secondary", size="sm"),
                 )
-            board.add_cell(f"Tone · {tone}", p)
+            board.add_cell(f"{title}", p)
         page.add(board)
 
+        # Component catalog (web index)
+        cat = AkShowcaseSection(
+            "Components",
+            "Open a surface",
+            "Same inventory as web gallery. Jump to the live demo page.",
+        )
+        grid = QGridLayout()
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(SPACE[4])
+        grid.setVerticalSpacing(SPACE[4])
+        grid.setColumnStretch(0, 1)
+        grid.setColumnStretch(1, 1)
+        catalog = [
+            ("Buttons", "Actions, variants, sizes", "Buttons"),
+            ("Forms", "Fields, choices, switches", "Forms"),
+            ("Feedback", "Alerts, tabs, accordion", "Feedback"),
+            ("Data", "Tables & empty states", "Data"),
+            ("Patterns", "List · form · empty · help", "Patterns"),
+            ("Tokens", "Ramp, type, space", "Tokens"),
+        ]
+        for i, (name, desc, target) in enumerate(catalog):
+            card = AkLinkCard(name, desc)
+            card.activated.connect(lambda t=target: self.go_page(t))
+            grid.addWidget(card, i // 2, i % 2)
+        wrap = QWidget()
+        wrap.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        wrap.setLayout(grid)
+        cat.add_widget(wrap)
+        page.add(cat)
+
+        # Working strip
         sec = AkShowcaseSection(
-            "Snapshot",
+            "Composition",
             "Working strip",
-            "A dense row of mixed components — how Akana reads in product UI.",
+            "How Akana reads in product density — badges, field, select, actions.",
         )
         toolbar = QFrame()
         toolbar.setObjectName("akToolbar")
         toolbar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        toolbar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         tv = QVBoxLayout(toolbar)
         tv.setContentsMargins(SPACE[5], SPACE[4], SPACE[5], SPACE[4])
-        tv.setSpacing(SPACE[3])
+        tv.setSpacing(SPACE[4])
         head = QHBoxLayout()
-        ht = QLabel("Toolbar")
+        ht = QLabel("Library")
         ht.setObjectName("akPanelTitle")
         head.addWidget(ht)
         head.addStretch(1)
-        hm = QLabel("COMPOSITION")
+        hm = QLabel("LIVE")
         hm.setObjectName("akLabel")
         head.addWidget(hm)
         tv.addLayout(head)
         row = QHBoxLayout()
         row.setSpacing(SPACE[3])
-        row.addWidget(AkBadge("Live"))
-        row.addWidget(AkBadge("Mono", variant="solid"))
-        row.addWidget(AkInput("Search library…"), 1)
-        row.addWidget(AkSelect(["All", "Draft", "Published"]))
-        row.addWidget(AkButton("Filter", variant="secondary", size="sm"))
-        row.addWidget(AkButton("New", size="sm"))
+        row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(AkBadge("Draft"), 0, Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(AkBadge("Mono", variant="solid"), 0, Qt.AlignmentFlag.AlignVCenter)
+        # Match control height (md) so the strip does not mix 48px fields with 36px chips
+        row.addWidget(AkInput("Search components…"), 1, Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(
+            AkSelect(["All", "Core", "Form", "Feedback"]),
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        row.addWidget(
+            AkButton("Filter", variant="secondary", size="md"),
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        row.addWidget(AkButton("New", size="md"), 0, Qt.AlignmentFlag.AlignVCenter)
         tv.addLayout(row)
         sec.add_widget(toolbar)
         page.add(sec)
 
         return page
 
+    def _page_tokens(self) -> Page:
+        page = Page(
+            "02 · Tokens",
+            "Three layers. One ink ramp.",
+            "Primitive grays never appear in components. Semantic tokens rebind "
+            "for dark mode. Layout uses SPACE, FS, RADIUS, CONTROL_H, FOCUS_W.",
+        )
+
+        # Semantic swatches for active theme
+        sec = AkShowcaseSection(
+            "Semantic",
+            f"Active · {current_name()}",
+            "These are the only colors components should reference.",
+        )
+        self._swatch_host = QWidget()
+        self._swatch_grid = QGridLayout(self._swatch_host)
+        self._swatch_grid.setContentsMargins(0, 0, 0, 0)
+        self._swatch_grid.setHorizontalSpacing(SPACE[3])
+        self._swatch_grid.setVerticalSpacing(SPACE[3])
+        self._swatch_grid.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        )
+        self._swatch_frames: list[tuple[QFrame, str]] = []
+        self._build_semantic_swatches()
+        sec.add_widget(self._swatch_host)
+        page.add(sec)
+
+        # Primitive ramp (fixed) — left-packed, labels under chips start-aligned
+        prim = AkShowcaseSection(
+            "Primitive",
+            "Gray ramp",
+            "Theme-agnostic. Do not use directly in widget code.",
+        )
+        ramp = QHBoxLayout()
+        ramp.setSpacing(SPACE[2])
+        ramp.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        for key in (
+            "gray-0", "gray-50", "gray-100", "gray-200", "gray-300",
+            "gray-400", "gray-500", "gray-600", "gray-700", "gray-800",
+            "gray-850", "gray-900", "gray-950",
+        ):
+            cell = QVBoxLayout()
+            cell.setSpacing(SPACE[1])
+            cell.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+            sw = QFrame()
+            sw.setObjectName("akSwatch")
+            sw.setFixedSize(SPACE[12], SPACE[12])
+            sw.setStyleSheet(
+                f"QFrame#akSwatch {{ background-color: {GRAY_PRIMITIVES[key]}; "
+                f"border: 1px solid {get_theme()['border']}; "
+                f"border-radius: {RADIUS.md}px; }}"
+            )
+            cell.addWidget(sw, 0, Qt.AlignmentFlag.AlignLeft)
+            n = QLabel(key.replace("gray-", ""))
+            n.setObjectName("akSwatchName")
+            n.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            cell.addWidget(n, 0, Qt.AlignmentFlag.AlignLeft)
+            w = QWidget()
+            w.setLayout(cell)
+            ramp.addWidget(w, 0, Qt.AlignmentFlag.AlignLeft)
+        ramp.addStretch(1)
+        ramp_w = QWidget()
+        ramp_w.setLayout(ramp)
+        prim.add_widget(ramp_w)
+        page.add(prim)
+
+        # Type / space reference
+        ref = AkStyleBoard(columns=2)
+        type_p = AkPanel()
+        type_p.add_header("Type scale", "DESKTOP PX")
+        for name, key in (
+            ("2xs · label", "2xs"),
+            ("xs", "xs"),
+            ("sm · control", "sm"),
+            ("md · body", "md"),
+            ("lg · lead", "lg"),
+            ("xl", "xl"),
+            ("2xl · section", "2xl"),
+            ("3xl · page", "3xl"),
+        ):
+            px = FS[key]
+            lab = QLabel(f"{name}  ·  {px}px")
+            lab.setObjectName("akMuted")
+            f = lab.font()
+            f.setPixelSize(px if px <= 22 else min(px, 22))
+            lab.setFont(f)
+            type_p.add_widget(lab)
+        ref.add_cell("Typography", type_p)
+
+        space_p = AkPanel(tone="surface")
+        space_p.add_header("Spacing", "4PX BASE")
+        for k in (1, 2, 3, 4, 5, 6, 8, 12):
+            v = SPACE[k]
+            row = QHBoxLayout()
+            cap = QLabel(f"space-{k}")
+            cap.setObjectName("akMonoMeta")
+            row.addWidget(cap)
+            bar = QFrame()
+            bar.setFixedHeight(SPACE[2])
+            bar.setFixedWidth(v)
+            bar.setStyleSheet(
+                f"background: {get_theme()['ink']}; border: none; "
+                f"border-radius: {RADIUS.sm // 2}px;"
+            )
+            row.addWidget(bar)
+            row.addWidget(QLabel(f"{v}px"))
+            row.addStretch(1)
+            wrap = QWidget()
+            wrap.setLayout(row)
+            space_p.add_widget(wrap)
+        ref.add_cell("Rhythm", space_p)
+        page.add(ref)
+
+        return page
+
+    def _build_semantic_swatches(self) -> None:
+        # Clear
+        while self._swatch_grid.count():
+            item = self._swatch_grid.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.deleteLater()
+        self._swatch_frames.clear()
+
+        t = get_theme()
+        keys = [
+            "bg", "surface", "surface_2", "border", "border_strong",
+            "ink", "text", "text_secondary", "text_muted",
+            "inverse_bg", "inverse_text", "ink_hover",
+        ]
+        for i, key in enumerate(keys):
+            cell = QVBoxLayout()
+            cell.setSpacing(SPACE[1])
+            cell.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+            sw = QFrame()
+            sw.setObjectName("akSwatch")
+            sw.setMinimumHeight(56)
+            hex_v = t[key]
+            sw.setStyleSheet(
+                f"QFrame#akSwatch {{ background-color: {hex_v}; "
+                f"border: 1px solid {t['border']}; border-radius: 8px; }}"
+            )
+            cell.addWidget(sw)
+            n = QLabel(key)
+            n.setObjectName("akSwatchName")
+            n.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            cell.addWidget(n)
+            h = QLabel(hex_v)
+            h.setObjectName("akSwatchHex")
+            h.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            cell.addWidget(h)
+            wrap = QWidget()
+            wrap.setLayout(cell)
+            self._swatch_grid.addWidget(
+                wrap, i // 4, i % 4, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            )
+            self._swatch_frames.append((sw, key))
+
+    def _refresh_swatches(self) -> None:
+        if not hasattr(self, "_swatch_grid"):
+            return
+        self._build_semantic_swatches()
+
     def _page_buttons(self) -> Page:
         page = Page(
-            "02 · Buttons",
+            "03 · Buttons",
             "Weight carries intent.",
-            "Primary fills with ink. Secondary outlines. Ghost stays quiet "
-            "until hover. Sizes share the same geometry language.",
+            "Primary fills with ink. Secondary outlines with border-strong. "
+            "Ghost stays quiet until hover. Focus always uses a 2px ink ring "
+            "without shifting layout.",
         )
 
         board = AkStyleBoard(columns=2)
 
-        # Variants cell
         v = AkPanel()
-        v.add_header("Variants", "3")
+        v.add_header("Variants", "PRIMARY · SECONDARY · GHOST")
         v.add_row(
             AkButton("Primary", variant="primary"),
             AkButton("Secondary", variant="secondary"),
@@ -475,7 +745,6 @@ class MainWindow(QMainWindow):
         v.add_row(dis, dis2)
         board.add_cell("Style matrix", v)
 
-        # Sizes
         s = AkPanel(tone="surface")
         s.add_header("Scale", "SM · MD · LG")
         s.add_row(
@@ -490,19 +759,18 @@ class MainWindow(QMainWindow):
         )
         board.add_cell("Size ladder", s)
 
-        # Inverse surface
         inv = AkPanel(tone="ink")
         inv.add_header("On ink", "INVERSE")
-        inv.add_widget(
-            QLabel("Ghost and secondary on the strongest surface.")
-        )
+        inv_copy = QLabel("Use inverse fill when the host surface is ink.")
+        inv_copy.setObjectName("akMuted")
+        inv_copy.setWordWrap(True)
+        inv.add_widget(inv_copy)
         inv.add_row(
             AkButton("Continue", variant="inverse", size="sm"),
             AkButton("Skip", variant="ghost", size="sm"),
         )
         board.add_cell("Inverse context", inv)
 
-        # Action cluster
         act = AkPanel()
         act.add_header("Clusters", "DIALOG / TOOLBAR")
         act.add_row(
@@ -516,58 +784,65 @@ class MainWindow(QMainWindow):
         board.add_cell("Real actions", act)
 
         page.add(board)
+
+        # Segmented nav demo
+        nav_sec = AkShowcaseSection(
+            "Nav strip",
+            "Horizontal segment",
+            "Web `.ak-nav` — surface shell, active item on bg with weight.",
+        )
+        strip = AkNavStrip()
+        for label in ("Overview", "Specs", "Activity", "Settings"):
+            strip.add_item(label)
+        nav_sec.add_widget(strip)
+        page.add(nav_sec)
+
         return page
 
     def _page_forms(self) -> Page:
         page = Page(
-            "03 · Forms",
+            "04 · Forms",
             "Quiet fields. Loud focus.",
-            "Inputs use border-strong at rest and ink at focus. Labels stay "
-            "mono uppercase — never colored.",
+            "AkField composes mono label + control + helper. Errors use ink "
+            "border and body-colored helper — never a red accent.",
         )
 
         board = AkStyleBoard(columns=2)
 
         fields = AkPanel()
-        fields.add_header("Fields", "DEFAULT")
-        fields.add_widget(_stack(
-            _field("Email", AkInput("you@example.com")),
-            _field("Role", AkSelect(["Designer", "Engineer", "Writer"])),
-            _field("Notes", AkTextarea("Optional context…")),
-        ))
+        fields.add_header("Fields", "AKFIELD")
+        email = AkField("Email", AkInput("you@example.com"), helper="We'll never share it.")
+        role = AkField("Role", AkSelect(["Designer", "Engineer", "Writer"]))
+        notes = AkField("Notes", AkTextarea("Optional context…"))
+        fields.add_widget(_stack(email, role, notes, spacing=SPACE[4]))
         board.add_cell("Standard", fields)
 
-        dense = AkPanel(tone="surface")
-        dense.add_header("Choices", "BINARY · EXCLUSIVE · SWITCH")
+        err = AkPanel(tone="surface")
+        err.add_header("Validation", "INK ONLY")
+        bad = AkField("Workspace slug", AkInput("My Workspace!"))
+        bad.set_error("Use lowercase letters, numbers, and hyphens.")
+        err.add_widget(bad)
+        err.add_widget(
+            AkField("Display name", AkInput("Ada"), helper="Shown on invoices.")
+        )
+        board.add_cell("Error state", err)
+
+        dense = AkPanel()
+        dense.add_header("Choices", "CHECK · RADIO · SWITCH")
         dense.add_widget(AkCheckbox("Email me product updates"))
         dense.add_widget(AkCheckbox("Share usage analytics"))
         rg = AkRadioGroup(["Public", "Unlisted", "Private"])
         rg.set_checked_index(1)
         dense.add_widget(rg)
         dense.add_widget(AkToggleSwitch("Two-factor authentication"))
+        dense.add_widget(AkToggleSwitch("Marketing emails"))
         board.add_cell("Selection", dense)
-
-        names = QWidget()
-        nh = QHBoxLayout(names)
-        nh.setContentsMargins(0, 0, 0, 0)
-        nh.setSpacing(SPACE[3])
-        nh.addWidget(AkInput("First name"), 1)
-        nh.addWidget(AkInput("Last name"), 1)
-        split = AkPanel()
-        split.add_header("Inline", "COMPACT ROW")
-        split.add_widget(names)
-        split.add_widget(_row(
-            AkSelect(["TR", "EN", "DE"]),
-            AkButton("Apply", size="sm"),
-            AkButton("Reset", variant="ghost", size="sm"),
-        ))
-        board.add_cell("Toolbar form", split)
 
         disabled = AkPanel(tone="dashed")
         disabled.add_header("Disabled", "MUTED")
         d = AkInput("Read only value")
         d.setEnabled(False)
-        disabled.add_widget(d)
+        disabled.add_widget(AkField("Locked", d, helper="Contact an admin to edit."))
         db = AkButton("Unavailable", variant="secondary", size="sm")
         db.setEnabled(False)
         disabled.add_row(db)
@@ -578,17 +853,17 @@ class MainWindow(QMainWindow):
 
     def _page_feedback(self) -> Page:
         page = Page(
-            "04 · Feedback",
+            "05 · Feedback",
             "Signal without color.",
             "Alerts escalate through border weight and fill — default, strong, "
-            "then solid ink. Tabs and accordion keep motion optional.",
+            "then solid ink. Disclosure keeps the chevron on the right.",
         )
 
         sec = AkShowcaseSection("Alerts", "Three levels of attention")
         sec.add_widget(
             AkAlert(
                 "Default",
-                "Surface fill, border-strong. Everyday notices.",
+                "Surface fill, border-strong. Everyday notices and confirmations.",
                 variant="default",
             )
         )
@@ -616,7 +891,7 @@ class MainWindow(QMainWindow):
         for title, body in (
             ("Overview", "Overview copy sits in secondary text. No tinted panels."),
             ("Specs", "Token tables and API notes would land here."),
-            ("Changelog", "v0.3 · frameless shell · style boards."),
+            ("Changelog", f"v{__version__} · painted controls · stable focus · AkField."),
         ):
             lab = QLabel(body)
             lab.setObjectName("akMuted")
@@ -631,16 +906,18 @@ class MainWindow(QMainWindow):
         acc.add_item(
             "Why no accent color?",
             "State is weight and border. Accent would become a crutch and "
-            "break dark-mode semantics.",
+            "break dark-mode semantics — every “success green” would need a twin.",
             expanded=True,
         )
         acc.add_item(
             "How is dark mode done?",
-            "Only the semantic layer rebinds. The gray ramp never flips itself.",
+            "Only the semantic layer rebinds. The gray ramp never flips itself. "
+            "Components keep the same token names.",
         )
         acc.add_item(
-            "Can I use system chrome?",
-            "You can — this gallery prefers a custom title bar for product feel.",
+            "What about icons?",
+            "Web uses 1px SVG. Qt uses a small monochrome glyph set in akana.icons — "
+            "no image assets, no CDN.",
         )
         acc_panel.add_widget(acc)
         board.add_cell("Help pattern", acc_panel)
@@ -656,14 +933,14 @@ class MainWindow(QMainWindow):
 
     def _page_data(self) -> Page:
         page = Page(
-            "05 · Data",
+            "06 · Data",
             "Tables read like type, not grids.",
-            "Mono headers, quiet row hover, no zebra rainbows. Empty states "
-            "use dashed borders — invitation, not error.",
+            "Mono uppercase headers, quiet row hover, no zebra stripes. "
+            "Empty states use dashed borders — invitation, not error.",
         )
 
         table_panel = AkPanel()
-        table_panel.add_header("Table", "3 COLUMNS")
+        table_panel.add_header("Table", "SELECT A ROW")
         table = AkTable(
             columns=["Name", "Role", "Status"],
             rows=[
@@ -673,7 +950,7 @@ class MainWindow(QMainWindow):
                 ["Katherine Johnson", "Mathematician", "Active"],
             ],
         )
-        table.setMinimumHeight(240)
+        table.setMinimumHeight(280)
         table_panel.add_widget(table)
         page.add(table_panel)
 
@@ -688,7 +965,7 @@ class MainWindow(QMainWindow):
 
         ink_empty_host = AkPanel(tone="ink")
         ink_empty_host.add_header("Empty · inverse", "ON INK")
-        body = QLabel("When the surrounding chrome is ink, keep actions light.")
+        body = QLabel("When surrounding chrome is ink, keep actions light.")
         body.setObjectName("akMuted")
         body.setWordWrap(True)
         ink_empty_host.add_widget(body)
@@ -702,38 +979,52 @@ class MainWindow(QMainWindow):
 
     def _page_patterns(self) -> Page:
         page = Page(
-            "06 · Patterns",
-            "Composition over isolation.",
-            "Same components, different jobs: list, form, empty, help — "
-            "mirroring web patterns.html.",
+            "07 · Patterns",
+            "Components in context.",
+            "Small compositions using only Akana tokens and components — "
+            "mirroring web patterns.html: list, form, empty, help.",
         )
 
-        # List
+        # List pattern: breadcrumb + table + badges + pagination
         list_p = AkPanel()
-        list_p.add_header("List", "INVOICES")
-        list_p.add_widget(
-            AkTable(
-                columns=["Document", "Client", "State"],
-                rows=[
-                    ["INV-1042", "Northwind", "Draft"],
-                    ["INV-1043", "Contoso", "Sent"],
-                    ["INV-1044", "Fabrikam", "Paid"],
-                ],
-            )
+        list_p.add_widget(_pattern_title("List · breadcrumb + table + pagination"))
+        list_p.add_widget(AkBreadcrumb(["Home", "Workspace", "Projects"]))
+        head = QHBoxLayout()
+        count = QLabel("12 projects")
+        count.setObjectName("akLabel")
+        head.addWidget(count)
+        head.addStretch(1)
+        head.addWidget(AkButton("New", size="sm"))
+        head_w = QWidget()
+        head_w.setLayout(head)
+        list_p.add_widget(head_w)
+
+        table = AkTable(
+            columns=["Name", "Status", "Updated"],
+            rows=[
+                ["Akana gallery", "", "Today"],
+                ["Invoice export", "", "Yesterday"],
+                ["Archive 2024", "", "Mon"],
+            ],
         )
-        list_p.add_row(
-            AkButton("Export", variant="ghost", size="sm"),
-            AkButton("New invoice", size="sm"),
-        )
+        # Badge cells
+        table.set_cell_widget(0, 1, _badge_cell("Active"))
+        table.set_cell_widget(1, 1, _badge_cell("Live", solid=True))
+        table.set_cell_widget(2, 1, _badge_cell("Paused"))
+        table.setMinimumHeight(220)
+        list_p.add_widget(table)
+        list_p.add_widget(AkPagination(total_pages=3, current=1))
         page.add(list_p)
 
         board = AkStyleBoard(columns=2)
 
         form = AkPanel(tone="surface")
-        form.add_header("Form", "CREATE PROJECT")
-        form.add_widget(_field("Name", AkInput("Apollo redesign")))
-        form.add_widget(_field("Visibility", AkSelect(["Private", "Team", "Public"])))
-        form.add_widget(_field("Brief", AkTextarea("Goals, constraints, success metrics…")))
+        form.add_widget(_pattern_title("Form · create project"))
+        form.add_widget(AkField("Name", AkInput("Apollo redesign")))
+        form.add_widget(AkField("Visibility", AkSelect(["Private", "Team", "Public"])))
+        form.add_widget(
+            AkField("Brief", AkTextarea("Goals, constraints, success metrics…"))
+        )
         form.add_row(
             AkButton("Cancel", variant="secondary", size="sm"),
             AkButton("Create project", size="sm"),
@@ -741,34 +1032,41 @@ class MainWindow(QMainWindow):
         board.add_cell("Form surface", form)
 
         help_p = AkPanel()
-        help_p.add_header("Help", "FAQ")
+        help_p.add_widget(_pattern_title("Help · FAQ accordion"))
         help_acc = AkAccordion()
         help_acc.add_item(
             "Theme switching",
-            "set_theme('dark'); styles.apply(window) — one shot for the tree.",
+            "set_theme('dark'); styles.apply(window). Preference persists in QSettings "
+            "(organization Akana, application AkanaQt).",
             expanded=True,
         )
         help_acc.add_item(
             "Custom title bar",
-            "AkTitleBar + FramelessWindowHint. Drag, double-click maximize, edge resize.",
+            "AkTitleBar + FramelessWindowHint. Drag, double-click maximize, edge resize. "
+            "On Windows, winchrome restores snap after show.",
         )
         help_acc.add_item(
             "Fonts",
-            "akana.fonts.load_fonts() after QApplication; TTF under assets/fonts.",
+            "akana.fonts.load_fonts() after QApplication; TTF under akana/assets/fonts. "
+            "Re-bundle with scripts/download_fonts.py.",
         )
         help_p.add_widget(help_acc)
         board.add_cell("Help accordion", help_p)
-
         page.add(board)
 
         empty_p = AkPanel(tone="dashed")
-        empty_p.add_header("Empty project", "FIRST RUN")
+        empty_p.add_widget(_pattern_title("Empty · first run"))
         es = AkEmptyState(
             "Nothing here yet",
             "Start with a pattern above, or open the modal for a confirm flow.",
         )
-        es.add_action(AkButton("Get started", size="sm"))
+        start_btn = AkButton("Get started", size="sm")
+        modal_btn = AkButton("Open modal…", variant="secondary", size="sm")
+        modal_btn.clicked.connect(self._open_modal)
+        es.add_action(start_btn)
+        es.add_action(modal_btn)
         empty_p.add_widget(es)
+        # Full-width empty block so CTA stays above the scroll bottom
         page.add(empty_p)
         return page
 
@@ -776,7 +1074,7 @@ class MainWindow(QMainWindow):
         dlg = AkModal("Publish changes?", self)
         body = QLabel(
             "Primary action uses ink. Secondary stays outlined. "
-            "The dialog shell is frameless-friendly and monochrome."
+            "Escape cancels. The scrim is monochrome — no brand tint."
         )
         body.setObjectName("akMuted")
         body.setWordWrap(True)
@@ -787,23 +1085,28 @@ class MainWindow(QMainWindow):
         dlg.exec()
 
 
-def _field(label: str, widget: QWidget) -> QWidget:
+def _badge_cell(text: str, *, solid: bool = False) -> QWidget:
+    """Table cell host for AkBadge — no vertical pad (row height centers it)."""
+    from akana.tokens import BADGE_H
+
     wrap = QWidget()
-    lay = QVBoxLayout(wrap)
-    lay.setContentsMargins(0, 0, 0, 0)
-    lay.setSpacing(SPACE[2])
-    cap = QLabel(label)
-    cap.setObjectName("akLabel")
-    lay.addWidget(cap)
-    lay.addWidget(widget)
+    wrap.setMinimumHeight(BADGE_H)
+    lay = QHBoxLayout(wrap)
+    # Zero vertical margins so QTableWidget cell widgets are not clipped
+    lay.setContentsMargins(SPACE[4], 0, SPACE[4], 0)
+    lay.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+    lay.addWidget(AkBadge(text, variant="solid" if solid else "default"), 0)
+    lay.addStretch(1)
     return wrap
 
 
 def main() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName("Akana Qt")
+    app.setOrganizationName("Akana")
     if fonts.load_fonts():
-        app.setFont(QFont("IBM Plex Sans", 10))
+        app.setFont(QFont("IBM Plex Sans", 11))
+    load_saved_theme()
     window = MainWindow()
     window.show()
     return app.exec()

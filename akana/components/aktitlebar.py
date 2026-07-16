@@ -1,7 +1,4 @@
-"""Akana Qt — custom frameless window title bar.
-
-Drag to move, double-click to maximize, min / max / close chrome.
-"""
+"""Akana Qt — custom frameless window title bar."""
 
 from __future__ import annotations
 
@@ -9,16 +6,18 @@ from PyQt6.QtCore import QPoint, Qt, pyqtSignal
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QWidget
 
-from akana.tokens import SPACE
+from akana.icons import glyph
+from akana.tokens import SPACE, TITLE_BTN_H, TITLE_BTN_W, TITLEBAR_H
+from akana.util import hand_cursor, set_dyn
 
 
 class AkTitleBarButton(QPushButton):
     def __init__(self, text: str, role: str = "chrome", parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
         self.setObjectName("akTitleBtn")
-        self.setProperty("role", role)
-        self.setFixedSize(40, 32)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        set_dyn(self, "role", role)
+        self.setFixedSize(TITLE_BTN_W, TITLE_BTN_H)
+        hand_cursor(self)
         self.setFlat(True)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
@@ -38,7 +37,7 @@ class AkTitleBar(QFrame):
         super().__init__(parent)
         self.setObjectName("AkTitleBar")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(44)
+        self.setFixedHeight(TITLEBAR_H)
         self._drag_origin: QPoint | None = None
         self._window: QWidget | None = None
 
@@ -46,7 +45,7 @@ class AkTitleBar(QFrame):
         root.setContentsMargins(SPACE[4], 0, SPACE[2], 0)
         root.setSpacing(SPACE[3])
 
-        mark = QLabel("◆")
+        mark = QLabel(glyph("mark"))
         mark.setObjectName("akTitleMark")
         root.addWidget(mark)
 
@@ -64,9 +63,9 @@ class AkTitleBar(QFrame):
         self._slot.setSpacing(SPACE[2])
         root.addLayout(self._slot)
 
-        self._min = AkTitleBarButton("–", "chrome")
-        self._max = AkTitleBarButton("□", "chrome")
-        self._close = AkTitleBarButton("×", "close")
+        self._min = AkTitleBarButton(glyph("minus"), "chrome")
+        self._max = AkTitleBarButton(glyph("maximize"), "chrome")
+        self._close = AkTitleBarButton(glyph("close"), "close")
         self._min.clicked.connect(self.minimizeClicked.emit)
         self._max.clicked.connect(self.maximizeClicked.emit)
         self._close.clicked.connect(self.closeClicked.emit)
@@ -89,10 +88,11 @@ class AkTitleBar(QFrame):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self._window is not None:
-            # Only start drag if not clicking a child button
             child = self.childAt(event.position().toPoint())
             if isinstance(child, QPushButton) or (
-                child is not None and child.parent() is not None and isinstance(child.parent(), QPushButton)
+                child is not None
+                and child.parent() is not None
+                and isinstance(child.parent(), QPushButton)
             ):
                 super().mousePressEvent(event)
                 return
@@ -111,7 +111,6 @@ class AkTitleBar(QFrame):
         ):
             if self._window.isMaximized():
                 self._window.showNormal()
-                # reset origin relative to restored geometry
                 self._drag_origin = QPoint(self._window.width() // 2, 20)
             self._window.move(event.globalPosition().toPoint() - self._drag_origin)
             event.accept()
@@ -130,4 +129,4 @@ class AkTitleBar(QFrame):
         super().mouseDoubleClickEvent(event)
 
     def set_maximized(self, maximized: bool) -> None:
-        self._max.setText("❐" if maximized else "□")
+        self._max.setText(glyph("restore" if maximized else "maximize"))

@@ -1,53 +1,50 @@
-"""Akana Qt — monochrome nav rail / items.
-
-Mirrors web `.ak-nav` / `.ak-nav__item` active states (weight + surface).
-"""
+"""Akana Qt — monochrome nav rail + segmented strip (web `.ak-nav`)."""
 
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QPushButton, QSizePolicy, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
-from akana.tokens import SPACE
+from akana.tokens import NAV_ITEM_H, NAV_STRIP_H, SPACE
+from akana.util import hand_cursor
 
 
 class AkNavItem(QPushButton):
     """Single nav entry with checkable active state."""
 
-    def __init__(
-        self,
-        text: str,
-        parent: QWidget | None = None,
-    ) -> None:
+    def __init__(self, text: str, parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
         self.setObjectName("akNavItem")
         self.setCheckable(True)
         self.setAutoExclusive(False)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        hand_cursor(self)
         self.setFlat(True)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        # Avoid default button min-height clipping the bottom border.
-        self.setMinimumHeight(40)
+        self.setMinimumHeight(NAV_ITEM_H)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
     def set_active(self, active: bool) -> None:
         self.setChecked(active)
-        # Force style re-eval so border/background paint cleanly.
-        style = self.style()
-        if style is not None:
-            style.unpolish(self)
-            style.polish(self)
-        self.update()
+        from akana.util import repolish
+
+        repolish(self)
 
 
 class AkNavRail(QFrame):
-    """Vertical nav rail."""
+    """Vertical nav rail for application shells."""
 
     currentChanged = pyqtSignal(int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        # Transparent host — parent supplies surface chrome (e.g. #akSidebar).
         self.setObjectName("akNavRail")
         self.setFrameShape(QFrame.Shape.NoFrame)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -75,8 +72,54 @@ class AkNavRail(QFrame):
         if 0 <= index < len(self._items):
             self.currentChanged.emit(index)
 
+    def current_index(self) -> int:
+        for i, item in enumerate(self._items):
+            if item.isChecked():
+                return i
+        return -1
+
     def count(self) -> int:
         return len(self._items)
+
+
+class AkNavStrip(QFrame):
+    """Horizontal segmented nav (web `.ak-nav` surface shell).
+
+    Packs to content width on the left — does not stretch to full page width.
+    """
+
+    currentChanged = pyqtSignal(int)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("AkNavStrip")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
+        self._items: list[AkNavItem] = []
+
+        self._row = QHBoxLayout(self)
+        self._row.setContentsMargins(SPACE[1], SPACE[1], SPACE[1], SPACE[1])
+        self._row.setSpacing(SPACE[1])
+        self._row.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+
+    def add_item(self, text: str) -> AkNavItem:
+        item = AkNavItem(text, self)
+        item.setObjectName("akNavStripItem")
+        item.setMinimumHeight(NAV_STRIP_H)
+        item.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        index = len(self._items)
+        item.clicked.connect(lambda _=False, i=index: self.set_current_index(i))
+        self._items.append(item)
+        self._row.addWidget(item)
+        if index == 0:
+            self.set_current_index(0)
+        return item
+
+    def set_current_index(self, index: int) -> None:
+        for i, item in enumerate(self._items):
+            item.set_active(i == index)
+        if 0 <= index < len(self._items):
+            self.currentChanged.emit(index)
 
 
 class AkNav(AkNavRail):

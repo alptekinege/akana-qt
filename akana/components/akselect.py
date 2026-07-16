@@ -1,8 +1,13 @@
-"""Akana Qt — monochrome select / combo box."""
+"""Akana Qt — monochrome select / combo box.
+
+Mirrors web `.ak-select`: CONTROL_H height, border-strong, ink focus.
+"""
 
 from __future__ import annotations
 
 from PyQt6.QtWidgets import QComboBox, QWidget
+
+from akana.tokens import CONTROL_H
 
 
 class AkSelect(QComboBox):
@@ -13,6 +18,7 @@ class AkSelect(QComboBox):
     ) -> None:
         super().__init__(parent)
         self.setObjectName("AkSelect")
-        self.setMinimumHeight(44)
+        self.setMinimumHeight(CONTROL_H)
+        self.setMaximumHeight(CONTROL_H)
         if items:
             self.addItems(items)

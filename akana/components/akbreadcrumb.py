@@ -5,7 +5,9 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QWidget
 
+from akana.icons import glyph
 from akana.tokens import SPACE
+from akana.util import hand_cursor
 
 
 class AkBreadcrumb(QFrame):
@@ -36,7 +38,7 @@ class AkBreadcrumb(QFrame):
 
         for i, label in enumerate(items):
             if i > 0:
-                sep = QLabel("/")
+                sep = QLabel(glyph("chevron-right"))
                 sep.setObjectName("akBreadcrumbSep")
                 self._layout.addWidget(sep)
 
@@ -48,7 +50,7 @@ class AkBreadcrumb(QFrame):
             else:
                 btn = QPushButton(label)
                 btn.setObjectName("akBreadcrumbLink")
-                btn.setCursor(Qt.CursorShape.PointingHandCursor)
+                hand_cursor(btn)
                 btn.setFlat(True)
                 idx = i
                 btn.clicked.connect(lambda _=False, j=idx: self.itemClicked.emit(j))

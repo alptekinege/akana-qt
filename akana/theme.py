@@ -2,6 +2,10 @@
 
 Dark mode rebinds ONLY semantic tokens; primitives stay fixed.
 No accent color. State = weight + border (monochrome invariant).
+
+Theme preference is persisted via QSettings under organization
+"Akana" / application "AkanaQt" (key: theme), mirroring web
+localStorage['akana-theme'].
 """
 
 from __future__ import annotations
@@ -25,9 +29,12 @@ THEMES: dict[str, dict[str, str]] = {
         "text_muted": G["gray-500"],
         "inverse_bg": G["gray-950"],
         "inverse_text": G["gray-0"],
-        # soft shadows as QSS-friendly rgba
+        # soft shadows as QSS-friendly rgba (reserved for hover/modal)
         "shadow_sm": "rgba(10, 10, 10, 0.06)",
         "shadow_md": "rgba(10, 10, 10, 0.08)",
+        # hover ink (primary press affordance without hue)
+        "ink_hover": G["gray-800"],
+        "ink_active": G["gray-700"],
     },
     "dark": {
         "bg": G["gray-950"],
@@ -43,17 +50,25 @@ THEMES: dict[str, dict[str, str]] = {
         "inverse_text": G["gray-950"],
         "shadow_sm": "rgba(0, 0, 0, 0.4)",
         "shadow_md": "rgba(0, 0, 0, 0.5)",
+        "ink_hover": G["gray-200"],
+        "ink_active": G["gray-300"],
     },
 }
 
 _current = "light"
+_SETTINGS_ORG = "Akana"
+_SETTINGS_APP = "AkanaQt"
+_SETTINGS_KEY = "theme"
 
 
-def set_theme(name: str) -> None:
+def set_theme(name: str, *, persist: bool = True) -> None:
+    """Activate light|dark. Optionally persist for the next session."""
     global _current
     if name not in THEMES:
         raise ValueError(f"unknown theme: {name!r} (expected light|dark)")
     _current = name
+    if persist:
+        _save_theme(name)
 
 
 def get_theme() -> dict[str, str]:
@@ -71,3 +86,32 @@ def token(key: str) -> str:
     if key not in t:
         raise KeyError(f"unknown semantic token: {key!r}")
     return t[key]
+
+
+def load_saved_theme() -> str:
+    """Load theme from QSettings (default light). Does not raise."""
+    name = _read_theme()
+    if name in THEMES:
+        set_theme(name, persist=False)
+    return _current
+
+
+def _save_theme(name: str) -> None:
+    try:
+        from PyQt6.QtCore import QSettings
+
+        s = QSettings(_SETTINGS_ORG, _SETTINGS_APP)
+        s.setValue(_SETTINGS_KEY, name)
+    except Exception:
+        pass
+
+
+def _read_theme() -> str | None:
+    try:
+        from PyQt6.QtCore import QSettings
+
+        s = QSettings(_SETTINGS_ORG, _SETTINGS_APP)
+        val = s.value(_SETTINGS_KEY, None)
+        return str(val) if val is not None else None
+    except Exception:
+        return None

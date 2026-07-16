@@ -8,9 +8,11 @@ from akana.components.akbutton import AkButton
 from akana.components.akcard import AkCard
 from akana.components.akcheckbox import AkCheckbox
 from akana.components.akemptystate import AkEmptyState
+from akana.components.akfield import AkField
 from akana.components.akinput import AkInput
+from akana.components.aklinkcard import AkLinkCard
 from akana.components.akmodal import AkModal
-from akana.components.aknav import AkNav, AkNavItem, AkNavRail
+from akana.components.aknav import AkNav, AkNavItem, AkNavRail, AkNavStrip
 from akana.components.akpagination import AkPagination
 from akana.components.akradio import AkRadio, AkRadioGroup
 from akana.components.akselect import AkSelect
@@ -31,11 +33,14 @@ __all__ = [
     "AkCard",
     "AkCheckbox",
     "AkEmptyState",
+    "AkField",
     "AkInput",
+    "AkLinkCard",
     "AkModal",
     "AkNav",
     "AkNavItem",
     "AkNavRail",
+    "AkNavStrip",
     "AkPagination",
     "AkPanel",
     "AkRadio",

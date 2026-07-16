@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from akana.tokens import SPACE
+from akana.tokens import SPACE, TAB_H
 
 
 class AkTabButton(QPushButton):
@@ -22,6 +22,8 @@ class AkTabButton(QPushButton):
         self.setCheckable(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFlat(True)
+        self.setMinimumHeight(TAB_H)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
 
 class AkTabs(QFrame):
